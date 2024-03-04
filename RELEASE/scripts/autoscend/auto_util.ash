@@ -1350,6 +1350,11 @@ boolean cloverUsageRestart()
 		//got interrupted and should adventure again in same location
 		return true;
 	}
+	if(lastAdventureSpecialNC())
+	{
+		//got interrupted and should adventure again in same location
+		return true;
+	}
 	return false;
 }
 
