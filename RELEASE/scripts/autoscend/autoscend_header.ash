@@ -489,6 +489,7 @@ int auto_remainingSpeakeasyFreeFights();
 boolean auto_haveTrainSet();
 void auto_modifyTrainSet(int one, int two, int three, int four, int five, int six, int seven, int eight);
 void auto_checkTrainSet();
+void auto_meatTrainSet();
 
 
 ########################################################################################################

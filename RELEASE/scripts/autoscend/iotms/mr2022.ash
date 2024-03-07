@@ -907,3 +907,11 @@ void auto_checkTrainSet()
 		return;
 	}
 }
+
+void auto_meatTrainSet() {
+	string page = visit_url("campground.php?action=workshed"); //once it is available, still double check that we can actually change the config
+	if (contains_text(page,'value="Save Train Set Configuration"')){
+		auto_modifyTrainSet(8, 1, 18, 7, 20, 2, 15, 19);
+	}
+	return;
+}
