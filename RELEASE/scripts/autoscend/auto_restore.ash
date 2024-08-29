@@ -165,6 +165,7 @@ static string __RESTORE_ALL = "all";
 static string __RESTORE_HALF = "half";
 static string __RESTORE_SCALING = "scaling";
 static string __HOT_TUB = "a relaxing hot tub";
+static string __NUNS = "the nunnery";
 
 /**
  * Parse autoscend_restoration.txt into __known_restoration_sources.
@@ -243,7 +244,7 @@ void __init_restoration_metadata()
 		string[string,string,string,string,string,string,string,string] raw_data;
 		file_to_map(resotration_filename, raw_data);
 
-		foreach type in $strings[item,skill,clan,dwelling]
+		foreach type in $strings[item,skill,clan,dwelling,place]
 		{
 			foreach idx,name,hp_restored,mp_restored,soft_reserve_limit,hard_reserve_limit,removes_effects,gives_effects in raw_data[type]
 			{
@@ -262,6 +263,12 @@ void __init_restoration_metadata()
 
 				__known_restoration_sources[parsed.name] = parsed;
 			}
+		}
+
+		// add mp restore to nunnery if did as fratboy
+		if(get_property("sidequestNunsCompleted") == "fratboy")
+		{
+			__known_restoration_sources["the nunnery"].mp_restored = 1000;
 		}
 
 		if(my_path() == $path[Disguises Delimit])
@@ -676,6 +683,10 @@ __RestorationOptimization __calculate_objective_values(int hp_goal, int mp_goal,
 		{
 			available = hotTubSoaksRemaining();
 		}
+		else if(metadata.name == __NUNS)
+		{
+			available = 3 - get_property("nunsVisits").to_int();
+		}
 		return max(0.0, available);
 	}
 
@@ -898,6 +909,10 @@ __RestorationOptimization __calculate_objective_values(int hp_goal, int mp_goal,
 		{
 			return isHotTubAvailable();
 		}
+		if(metadata.name == __NUNS)
+		{
+			return get_property("sidequestNunsCompleted") != "none";
+		}
 		return true;
 	}
 
@@ -924,6 +939,10 @@ __RestorationOptimization __calculate_objective_values(int hp_goal, int mp_goal,
 		if(metadata.name == __HOT_TUB)
 		{
 			return hotTubSoaksRemaining() > 0;
+		}
+		if(metadata.name == __NUNS)
+		{
+			return get_property("nunsVisits").to_int() < 3;
 		}
 		return true;
 	}
@@ -1540,6 +1559,13 @@ boolean __restore(string resource_type, int goal, int meat_reserve, boolean useF
 			int pre_soaks = hotTubSoaksRemaining();
 			return doHottub() == pre_soaks - 1;
 		}
+		if(metadata.name == __NUNS)
+		{
+			int pre_visits = get_property("nunsVisits").to_int();
+			cli_execute("nuns");
+			int post_visits = get_property("nunsVisits").to_int();
+			return pre_visits == post_visits - 1;
+		}
 
 		if(metadata.type == "skill")
 		{
@@ -1812,7 +1838,7 @@ boolean acquireMP(int goal, int meat_reserve, boolean useFreeRests)
 				}
 				if(my_mp() > 0)
 				{
-					catch cli_execute("burn " + min(excessMP,my_mp()));
+					auto_burnMP(min(excessMP,my_mp()));
 				}
 			}
 			use_skill(casts, $skill[Soul Food]);
@@ -1837,7 +1863,7 @@ boolean acquireMP(int goal, int meat_reserve, boolean useFreeRests)
 				}
 				if(my_mp() > 0)
 				{
-					catch cli_execute("burn " + min(excessMP,my_mp()));
+					auto_burnMP(min(excessMP,my_mp()));
 				}
 			}
 			use_skill(casts, $skill[Sip Some Sweat]);
@@ -2132,6 +2158,10 @@ int doRest()
 		}
 
 	}
+	else if(is_professor())
+	{
+		visit_url("place.php?whichplace=wereprof_cottage&action=wereprof_sleep");
+	}
 	else
 	{
 		set_property("restUsingChateau", false);
@@ -2165,7 +2195,7 @@ int auto_potentialMaxFreeRests()
 	// we can get the count of "intrinsic" free rests e.g perm'd skills & rests you get just from having something available in run
 	int potential = numeric_modifier("Free Rests");
 
-	if (auto_canUseJuneCleaver() && !possessEquipment($item[mother's necklace]))
+	if (auto_canUseJuneCleaver() && !possessEquipment($item[mother\'s necklace]))
 	{
 		potential += 5;
 	}
@@ -2208,7 +2238,7 @@ boolean doFreeRest(){
 
 		if (mpToBurn > 0)
 		{
-			cli_execute("burn " + mpToBurn);
+			auto_burnMP(mpToBurn);
 		}
 
 		// resting and success check

@@ -104,7 +104,7 @@ boolean auto_run_choice(int choice, string page)
 			hiddenTempleChoiceHandler(choice, page);
 			break;
 		case 139: // Bait and Switch (The Hippy Camp (Verge of War))
-			if(options contains 4)
+			if(options contains 4 && haveWarOutfit())
 			{
 				run_choice(4); // use your candy cane sword cane to skip to the war start
 			}
@@ -114,7 +114,7 @@ boolean auto_run_choice(int choice, string page)
 			}
 			break;
 		case 140: // The Thin Tie-Dyed Line (The Hippy Camp (Verge of War))
-			if(options contains 4)
+			if(options contains 4 && haveWarOutfit())
 			{
 				run_choice(4); // use your candy cane sword cane to skip to the war start
 			}
@@ -130,7 +130,7 @@ boolean auto_run_choice(int choice, string page)
 			run_choice(3); // starts the war. skips adventure if already started.
 			break;
 		case 143: // Catching Some Zetas (Orcish Frat House (Verge of War))
-			if(options contains 4)
+			if(options contains 4 && haveWarOutfit())
 			{
 				run_choice(4); // use your candy cane sword cane to skip to the war start
 			}
@@ -140,7 +140,7 @@ boolean auto_run_choice(int choice, string page)
 			}
 			break;
 		case 144: // One Less Room Than In That Movie (Orcish Frat House (Verge of War))
-			if(options contains 4)
+			if(options contains 4 && haveWarOutfit())
 			{
 				run_choice(4); // use your candy cane sword cane to skip to the war start
 			}
@@ -755,6 +755,18 @@ boolean auto_run_choice(int choice, string page)
 			break;
 		case 1500: // Like a Loded Stone
 			run_choice(2); // only come here to get shadow waters buff
+			break;
+		case 1519: // The coffee was *gasp* decaf!
+			run_choice(1);
+			break;
+		case 1520: // Hang On to Yourself
+			run_choice(1);
+			break;
+		case 1521: // Ch-ch-ch-ch-chaaaanges
+			run_choice(1);
+			break;
+		case 1522: // The Antiscientific Method
+			run_choice(1);
 			break;
 		case 1525:
 			dartChoiceHandler(choice, options);

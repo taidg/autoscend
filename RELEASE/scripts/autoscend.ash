@@ -1,4 +1,4 @@
-since r27897;	// additional monster parts
+since r27980;	// feat: beer from wiki, kiwi plurals
 /***
 	autoscend_header.ash must be first import
 	All non-accessory scripts must be imported here
@@ -68,6 +68,7 @@ import <autoscend/paths/g_lover.ash>
 import <autoscend/paths/gelatinous_noob.ash>
 import <autoscend/paths/grey_goo.ash>
 import <autoscend/paths/heavy_rains.ash>
+import <autoscend/paths/i_love_u_hate.ash>
 import <autoscend/paths/kingdom_of_exploathing.ash>
 import <autoscend/paths/kolhs.ash>
 import <autoscend/paths/legacy_of_loathing.ash>
@@ -84,6 +85,7 @@ import <autoscend/paths/small.ash>
 import <autoscend/paths/the_source.ash>
 import <autoscend/paths/two_crazy_random_summer.ash>
 import <autoscend/paths/way_of_the_surprising_fist.ash>
+import <autoscend/paths/wereprofessor.ash>
 import <autoscend/paths/wildfire.ash>
 import <autoscend/paths/you_robot.ash>
 import <autoscend/paths/zombie_slayer.ash>
@@ -279,6 +281,7 @@ void initializeSettings() {
 	fotd_initializeSettings();
 	lol_initializeSettings();
 	small_initializeSettings();
+	wereprof_initializeSettings();
 
 	set_property("auto_doneInitializePath", my_path().name);		//which path we initialized as
 	set_property("auto_doneInitialize", my_ascensions());
@@ -586,9 +589,9 @@ boolean tophatMaker()
 
 boolean LX_doVacation()
 {
-	if(in_koe())
+	if(in_koe() || is_werewolf())
 	{
-		return false;		//cannot vacation in kingdom of exploathing path
+		return false;		//cannot vacation in kingdom of exploathing path or are a werewolf in wereprofessor
 	}
 	
 	int meat_needed = 500;
@@ -616,6 +619,28 @@ boolean LX_doVacation()
 	}
 
 	return autoAdv(1, $location[The Shore\, Inc. Travel Agency]);
+}
+
+boolean auto_doTempleSummit()
+{
+	if(!hidden_temple_unlocked() || internalQuestStatus("questL11Worship") < 3)
+	{
+		return false;
+	}
+	if(available_amount($item[stone wool])==0)
+	{
+		return false;
+	}
+	if (get_property("lastTempleAdventures").to_int()>=my_ascensions())
+	{
+		return false;
+	}
+	buffMaintain($effect[Stone-Faced]);
+	if(have_effect($effect[Stone-Faced]) == 0)
+	{
+		return false;
+	}
+	return autoAdv($location[The Hidden Temple]);
 }
 
 void initializeDay(int day)
@@ -763,7 +788,7 @@ void initializeDay(int day)
 	}
 
 	// Get emotionally chipped if you have the item.  boris\jarlsberg\sneaky pete\zombie slayer\ed cannot use this skill so excluding.
-	if (!have_skill($skill[Emotionally Chipped]) && item_amount($item[spinal-fluid-covered emotion chip]) > 0 && !(is_boris() || is_jarlsberg() || is_pete() || in_zombieSlayer() || isActuallyEd() || in_awol() || in_gnoob() || in_darkGyffte()))
+	if (!have_skill($skill[Emotionally Chipped]) && item_amount($item[spinal-fluid-covered emotion chip]) > 0 && !(is_boris() || is_jarlsberg() || is_pete() || in_zombieSlayer() || isActuallyEd() || in_awol() || in_gnoob() || in_darkGyffte() || in_wereprof()))
 	{
 		use(1, $item[spinal-fluid-covered emotion chip]);
 	}
@@ -841,7 +866,7 @@ void initializeDay(int day)
 			{
 				acquireGumItem($item[disco ball]);
 			}
-			if(!(is_boris() || is_jarlsberg() || is_pete() || isActuallyEd() || in_darkGyffte() || in_plumber()))
+			if(!(is_boris() || is_jarlsberg() || is_pete() || isActuallyEd() || in_darkGyffte() || in_plumber() || in_wereprof()))
 			{
 				if((item_amount($item[Antique Accordion]) == 0) && (item_amount($item[Aerogel Accordion]) == 0) && (auto_predictAccordionTurns() < 5) && ((my_meat() > npc_price($item[Toy Accordion])) && (npc_price($item[Toy Accordion]) != 0)))
 				{
@@ -1154,6 +1179,11 @@ boolean Lsc_flyerSeals()
 	{
 		return false;
 	}
+	// although seals can be fought drunk, it complicates code without serving a purpose
+	if(my_inebriety() > inebriety_limit())
+	{
+		return false;
+	}
 	if (internalQuestStatus("questL12War") != 1)
 	{
 		return false;
@@ -1368,7 +1398,7 @@ boolean adventureFailureHandler()
 		}
 	}
 
-	if(last_monster() == $monster[Crate])
+	if(last_monster() == $monster[Crate] && (in_wereprof() && !($location[Noob Cave].turns_spent < 8))) //want 7 turns of Noob Cave in Wereprof for Smashed Scientific Equipment
 	{
 		if(get_property("auto_newbieOverride").to_boolean())
 		{
@@ -1785,6 +1815,7 @@ boolean doTasks()
 	pete_buySkills();
 	zombieSlayer_buySkills();
 	lol_buyReplicas();
+	iluh_buyEquiq();
 
 	oldPeoplePlantStuff();
 	use_barrels();
@@ -1809,6 +1840,7 @@ boolean doTasks()
 	auto_checkTrainSet();
 	prioritizeGoose();
 	auto_useWardrobe();
+	auto_MayamClaimAll();
 	
 	ocrs_postCombatResolve();
 	beatenUpResolution();
@@ -1888,6 +1920,8 @@ boolean doTasks()
 	auto_lostStomach(false);
 	if(auto_doPhoneQuest())				return true;
 	
+	if(auto_doTempleSummit())		return true;
+	
 	if (process_tasks()) return true;
 
 	auto_log_info("I should not get here more than once because I pretty much just finished all my in-run stuff. Beep", "blue");
@@ -1963,6 +1997,9 @@ void auto_begin()
 	backupSetting("logPreferenceChange", "true");
 	backupSetting("logPreferenceChangeFilter", "maximizerMRUList,testudinalTeachings,auto_maximize_current");
 	backupSetting("maximizerMRUSize", 0); // shuts the maximizer spam up!
+	backupSetting("allowNonMoodBurning", true); // required to be true for burn cli cmd to work properly
+	backupSetting("lastChanceThreshold", 1); // burn command will always use last chance skill, if we have no active buffs
+	backupSetting("lastChanceBurn",""); // clear default mana burn skill so mafia doesn't attempt to cast a skill we don't currently have
 
 	string charpane = visit_url("charpane.php");
 	if(contains_text(charpane, "<hr width=50%><table"))

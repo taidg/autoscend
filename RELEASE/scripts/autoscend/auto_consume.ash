@@ -325,6 +325,18 @@ boolean autoEat(int howMany, item toEat, boolean silent)
 	{
 		return false;
 	}
+	if(toEat == $item[Black and White Apron Meal Kit])
+	{
+		if(consumeBlackAndWhiteApronKit())
+		{
+			handleTracker("Black and White Apron Kit", "auto_eaten");
+			return true;
+		}
+		else
+		{
+			abort("Attempted to eat food from Black and White Apron Kit, but failed.");
+		}
+	}
 	if(item_amount(toEat) < howMany)
 	{
 		return false;
@@ -362,6 +374,14 @@ boolean autoEat(int howMany, item toEat, boolean silent)
 		if(item_amount($item[whet stone]) > 0) //use whet stone if we got one from the rock garden
 		{
 			use(1, $item[whet stone]);
+		}
+		if(item_amount($item[mini kiwi aioli]) > 0 || (item_amount($item[mini kiwi]) >= 5 && item_amount($item[mini kiwi aioli]) == 0)) //use mini kiwi aioli if we got one from the mini kiwi
+		{
+			if(item_amount($item[mini kiwi aioli]) == 0)
+			{
+				create(1, $item[mini kiwi aioli]); //create the aioli to actually use it
+			}
+			use(1, $item[mini kiwi aioli]);
 		}
 		if(have_effect($effect[Ready to Eat]) > 0)
 		{
@@ -497,6 +517,14 @@ boolean canDrink(item toDrink, boolean checkValidity)
 	{
 		// liver size of 1 in small path
 		return false;
+	}
+	if(is_werewolf())
+	{
+		//Can't access Fancy Dan as Werewolf
+		if($items[Champagne Shimmy, Charleston Choo-Choo, Marltini, Mysterious Stranger, Strong\, Silent Type, Velvet Veil] contains toDrink)
+		{
+			return false;
+		}
 	}
 
 	// small path ignores consumable level requirements
@@ -840,6 +868,10 @@ boolean loadConsumables(string _type, ConsumeAction[int] actions)
 		{
 			blacklist[it] = true;
 		}
+	}
+	if(is_professor() || (is_werewolf() && get_property("wereProfessorTransformTurns") < 50))
+	{
+		blacklist[$item[plain calzone]] = true; //because 50 turn buff and can only handle +ML as a werewolf, either blacklist altogether or get lucky and eat ASAP as a werewolf
 	}
 	if(item_amount($item[Wet Stunt Nut Stew]) == 0 && !possessEquipment($item[Mega Gem]) && !isActuallyEd())
 	{
@@ -1219,6 +1251,16 @@ boolean loadConsumables(string _type, ConsumeAction[int] actions)
 		int size = 1;
 		float adv = auto_expectedStillsuitAdvs().to_float();
 		actions[count(actions)] = new ConsumeAction($item[tiny stillsuit], 0, size, adv, adv, AUTO_ORGAN_LIVER, AUTO_OBTAIN_NULL);
+	}
+
+	// Add black and white apron if we are looking to eat
+	item apronKit = $item[Black and White Apron Meal Kit];
+	if(type == AUTO_ORGAN_STOMACH && (item_amount(apronKit) > 0 || canPull(apronKit)) && auto_is_valid(apronKit))
+	{
+		int size = 3;
+		float adv = 12.0;
+		int obtainMethod = item_amount(apronKit) > 0 ? AUTO_OBTAIN_NULL : AUTO_OBTAIN_PULL;
+		actions[count(actions)] = new ConsumeAction(apronKit, 0, size, adv, adv, AUTO_ORGAN_STOMACH, obtainMethod);
 	}
 
 	// Now, to load cafe consumables. This has some TCRS-specific code.
@@ -1997,6 +2039,7 @@ boolean prepare_food_xp_multi()
 	
 	//[Ready to Eat] is gotten by using a red rocket from fireworks shop in VIP clan. it gives +400% XP on next food item
 	if(have_fireworks_shop() &&
+	!in_wereprof() && // don't want to use in WereProfessor
 	have_effect($effect[Ready to Eat]) <= 0 &&
 	auto_is_valid($item[red rocket]))
 	{

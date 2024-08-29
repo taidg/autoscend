@@ -34,6 +34,10 @@ string auto_combatDefaultStage5(int round, monster enemy, string text)
 	retval = auto_combatFallOfTheDinosaursStage5(round, enemy, text);
 	if(retval != "") return retval;
 
+	// Path = Wereprofessor
+	retval = auto_combatWereProfessorStage5(round, enemy, text);
+	if(retval != "") return retval;
+
 	//with loofah, you can stagger and deal cold or hot damage
 	if(canUse($skill[loofah stew]) && monster_element(enemy) != $element[cold])
 	{
@@ -159,7 +163,7 @@ string auto_combatDefaultStage5(int round, monster enemy, string text)
 	//Everfull Dart Holder
 	if(have_equipped($item[Everfull Dart Holster]) && get_property("_dartsLeft").to_int() > 0)
 	{
-		return useSkill(dartSkill());
+		return useSkill(dartSkill(), false);
 	}
     
 	//mortar shell is amazing. it really should not be limited to sauceror only.
@@ -167,6 +171,13 @@ string auto_combatDefaultStage5(int round, monster enemy, string text)
 	{
 		set_property("_auto_combatTracker_MortarRound", round);
 		return useSkill($skill[Stuffed Mortar Shell]);
+	}
+
+	
+	//Roman Candelabra red candle
+	if(have_equipped($item[Roman Candelabra]) && have_effect($effect[Everything Looks Red]) == 0 && !auto_haveDarts())
+	{
+		return useSkill($skill[Blow the Red Candle\!]);
 	}
 
 	//general killing code

@@ -304,6 +304,10 @@ boolean loveTunnelAcquire(boolean enforcer, stat statItem, boolean engineer, int
 	{
 		return false;
 	}
+	if((in_wereprof() && turns_played() < 50) || is_professor())
+	{
+		return false; //don't try LOV Tunnel if haven't retransformed back to werewolf or is a professor in WereProf
+	}
 
 	string temp = visit_url("place.php?whichplace=town_wrong");
 	if(!(contains_text(temp, "townwrong_tunnel")))
@@ -1773,6 +1777,11 @@ boolean[monster] failedWishMonsters;
 
 boolean canGenieCombat(monster mon)
 {
+	if(!mon.wishable)
+	{
+		return false;
+	}
+	
 	item bottle = wrap_item($item[Genie Bottle]);
 	boolean haveBottle = item_amount(bottle) > 0;
 	boolean bottleWishesLeft = get_property("_genieWishesUsed").to_int() < 3;
@@ -1822,7 +1831,7 @@ boolean makeGenieCombat(monster mon, string option)
 	string[int] pages;
 	item bottle = wrap_item($item[Genie Bottle]);
 	int wish_provider = bottle.to_int();
-	if (item_amount($item[pocket wish]) > 0)
+	if (item_amount($item[pocket wish]) > 0 && auto_is_valid($item[pocket wish]))
 	{
 		wish_provider = $item[pocket wish].to_int();
 	}
