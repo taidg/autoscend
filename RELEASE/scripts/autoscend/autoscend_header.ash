@@ -485,6 +485,7 @@ boolean auto_sendAutumnaton(location loc);
 boolean auto_autumnatonQuest();
 boolean auto_hasSpeakEasy();
 int auto_remainingSpeakeasyFreeFights();
+boolean speakeasyCombat();
 
 
 boolean auto_haveTrainSet();
@@ -569,6 +570,11 @@ boolean auto_MayamClaimBelt();
 boolean auto_MayamClaimWhatever();
 boolean auto_MayamClaimAll();
 boolean auto_haveRoman();
+boolean auto_haveBatWings();
+boolean auto_canLeapBridge();
+boolean auto_haveSeptEmberCenser();
+int remainingEmbers();
+void auto_buyFromSeptEmberStore();
 
 ########################################################################################################
 //Defined in autoscend/paths/actually_ed_the_undying.ash
@@ -1081,6 +1087,7 @@ boolean L8_trapperQuest();
 boolean LX_loggingHatchet();
 boolean L9_leafletQuest();
 void L9_chasmMaximizeForNoncombat();
+int bridgeGoal();
 int fastenerCount();
 int lumberCount();
 boolean finishBuildingSmutOrcBridge();
@@ -1199,6 +1206,7 @@ boolean L12_islandWar();
 //Defined in autoscend/quests/level_13.ash
 boolean needStarKey();
 boolean needDigitalKey();
+boolean need8BitPoints();
 int towerKeyCount();
 int towerKeyCount(boolean effective);
 int EightBitScore();
@@ -1593,6 +1601,10 @@ float provideMoxie(int amt, location loc, boolean doEquips, boolean speculative)
 float provideMoxie(int amt, boolean doEquips, boolean speculative);
 boolean provideMoxie(int amt, location loc, boolean doEquips);
 boolean provideMoxie(int amt, boolean doEquips);
+float provideItem(int amt, location loc, boolean doEverything, boolean speculative);
+float provideItem(int amt, boolean doEverything, boolean speculative);
+boolean provideItem(int amt, location loc, boolean doEverything);
+boolean provideItem(int amt, boolean doEverything);
 float provideMeat(int amt, location loc, boolean doEverything, boolean speculative);
 float provideMeat(int amt, boolean doEverything, boolean speculative);
 boolean provideMeat(int amt, location loc, boolean doEverything);
@@ -1675,6 +1687,8 @@ boolean zone_isAvailable(location loc, boolean unlockIfPossible);
 boolean zone_isAvailable(location loc);
 int[location] zone_delayable();
 generic_t zone_needItem(location loc);
+generic_t zone_needItemBooze(location loc);
+generic_t zone_needItemFood(location loc);
 generic_t zone_combatMod(location loc);
 generic_t zone_delay(location loc);
 boolean zone_available(location loc);
@@ -1867,6 +1881,7 @@ int poolSkillPracticeGains();
 boolean hasUsefulShirt();
 int meatReserve();
 boolean auto_wishForEffect(effect wish);
+int auto_totalEffectWishesAvailable();
 item wrap_item(item it);
 boolean auto_burnMP(int mpToBurn);
 boolean can_read_skillbook(item it);
