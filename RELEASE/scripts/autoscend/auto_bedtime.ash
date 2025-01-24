@@ -623,7 +623,7 @@ boolean doBedtime()
 	while(LX_freeCombats());
 
 	// although seals can be fought drunk, it complicates code without a meaningful benefit
-	if((my_class() == $class[Seal Clubber]) && guild_store_available() && my_inebriety() <= inebriety_limit())
+	if (my_class() == $class[Seal Clubber] && guild_store_available() && my_inebriety() <= inebriety_limit() && !in_avantGuard())
 	{
 		handleFamiliar("stat");
 		int oldSeals = get_property("_sealsSummoned").to_int();
@@ -1016,8 +1016,8 @@ boolean doBedtime()
 			if(in_glover())
 			{
 				auto_sourceTerminalEnhance("damage");
-				enhances -= 1;				
-			}
+				enhances -= 1;
+		}
 			else
 			{
 				auto_sourceTerminalEnhance("items");
@@ -1316,6 +1316,7 @@ boolean doBedtime()
 
 		acquireMilkOfMagnesiumIfUnused(true);
 		consumeMilkOfMagnesiumIfUnused();
+		auto_scepterRollover();
 
 		if(have_skill($skill[Calculate the Universe]) && auto_is_valid($skill[Calculate the Universe]) && (get_property("_universeCalculated").to_int() < min(3, get_property("skillLevel144").to_int())))
 		{

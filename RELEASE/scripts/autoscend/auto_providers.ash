@@ -104,6 +104,7 @@ float providePlusCombat(int amt, location loc, boolean doEquips, boolean specula
 	if (tryEffects($effects[
 		Musk of the Moose,
 		Carlweather's Cantata of Confrontation,
+		Attracting Snakes,
 		Blinking Belly,
 		Song of Battle,
 		Frown,
@@ -144,6 +145,21 @@ float providePlusCombat(int amt, location loc, boolean doEquips, boolean specula
 
 	if(pass()) {
 		return result();
+	}
+
+	if (!speculative)
+	{
+		//Prep for if other +combat familiars are added
+		foreach fam in $familiars[Jumpsuited Hound Dog]
+		{
+			if(canChangeToFamiliar(fam))
+			{
+				handleFamiliar(fam);
+				if(pass()){
+					return result();
+				}
+			}
+		}
 	}
 
 	return result();
@@ -286,6 +302,7 @@ float providePlusNonCombat(int amt, location loc, boolean doEquips, boolean spec
 		Muffled,
 		Smooth Movements,
 		The Sonata of Sneakiness,
+		Hiding From Seekers,
 		Song of Solitude,
 		Inked Well,
 		Bent Knees,
@@ -353,6 +370,20 @@ float providePlusNonCombat(int amt, location loc, boolean doEquips, boolean spec
 	// Glove charges are a limited per-day resource, lets do this last so we don't waste possible uses of Replace Enemy
 	if (auto_hasPowerfulGlove() && tryEffects($effects[Invisible Avatar])) {
 		return result();
+	}
+
+	if (!speculative)
+	{
+		foreach fam in $familiars[Peace Turkey, Disgeist]
+		{
+			if(canChangeToFamiliar(fam))
+			{
+				handleFamiliar(fam);
+				if(pass()){
+					return result();
+				}
+			}
+		}
 	}
 
 	return result();
@@ -1691,14 +1722,14 @@ float provideItem(int amt, location loc, boolean doEverything, boolean speculati
 
 	if(auto_birdModifier("Item Drop") > 0)
 	{
-		//Can be 10/20/30/40/50% meat drop
+		//Can be 10/20/30/40/50% item drop
 		if(tryEffects($effects[Blessing of the Bird]))
 			return result();
 	}
 
 	if(auto_favoriteBirdModifier("Item Drop") > 0)
 	{
-		//Can be 10/20/30/40/50% meat drop
+		//Can be 10/20/30/40/50% item drop
 		if(tryEffects($effects[Blessing of Your Favorite Bird]))
 			return result();
 	}
@@ -1707,6 +1738,7 @@ float provideItem(int amt, location loc, boolean doEverything, boolean speculati
 	if(tryEffects($effects[
 		Unusual Perspective, //50% item
 		Five Sticky Fingers, //50% item
+		Spitting Rhymes, //50% item
 		Wet and Greedy, //25% item
 		Serendipi Tea, //25% item
 		Glowing Hands, //25% item
@@ -1820,7 +1852,8 @@ float provideItem(int amt, location loc, boolean doEverything, boolean speculati
 		shadow waters, //200% meat, 100% item, 100% init, -10% combat
 		One Very Clear Eye, //100% item
 		Car-Charged, //100% meat, 100% item, 5-10MP, 50% init, 50% spell dmg, +3 stats per fight
-		Incredibly Well Lit //100% meat, 50% item
+		Incredibly Well Lit, //100% meat, 50% item
+		Crunching Leaves //25% item, +5 combat
 		]))
 			if(pass())
 				return result();

@@ -265,6 +265,11 @@ boolean LX_islandAccess()
 		return LX_hippyBoatman();
 	}
 
+	if (get_property("lastIslandUnlock").to_int() < my_ascensions() && item_amount($item[pirate dinghy]) > 0 && !get_property("_pirateDinghyUsed").to_boolean()) {
+		use(1, $item[pirate dinghy]);
+		return true;
+	}
+
 	boolean canDesert = (get_property("lastDesertUnlock").to_int() == my_ascensions());
 
 	if((item_amount($item[Shore Inc. Ship Trip Scrip]) >= 3) && (get_property("lastIslandUnlock").to_int() != my_ascensions()) && (my_meat() >= npc_price($item[dingy planks])) && isGeneralStoreAvailable())
@@ -280,7 +285,7 @@ boolean LX_islandAccess()
 		if(get_property("lastIslandUnlock").to_int() == my_ascensions())
 		{
 			boolean reallyUnlocked = false;
-			foreach it in $items[Dingy Dinghy, Skeletal Skiff, Yellow Submarine]
+			foreach it in $items[Dingy Dinghy, Skeletal Skiff, Yellow Submarine, pirate dinghy]
 			{
 				if(item_amount(it) > 0)
 				{
@@ -541,9 +546,9 @@ boolean LX_fatLootToken()
 		//wait until daily dungeon is done before considering doing fantasy realm
 		if(fantasyRealmToken()) return true;
 	}
-	if(internalQuestStatus("questL13Final") == 5)
+	if(internalQuestStatus("questL13Final") == 5 || auto_turbo())
 	{
-		// at NS tower door and still need hero keys
+		// at NS tower door and still need hero keys or going for turbo
 
 		// summon and copy fantasy realm bandit. Allows for getting fantasy realm token without having FR available
 		if(!acquiredFantasyRealmToken() && ((auto_haveBackupCamera() && auto_backupUsesLeft() >= (4 - fantasyBanditsFought())) || auto_canHabitat()) && canSummonMonster($monster[fantasy bandit]))
@@ -608,10 +613,19 @@ boolean LX_dailyDungeonToken()
 	{
 		return false;	//can switch to cubeling so wait until we have all the tool drops before doing daily dungeon
 	}
-	
+
+	boolean needPole = true;
+	if(auto_haveCCSC())
+	{
+		needPole = false; // candy cane sword cane can act as an eleven-foot pole so don't buy if we already have it
+	}
+
 	if(can_interact())		//if you can not use cubeling then mallbuy missing tools in casual and postronin
 	{
-		auto_buyUpTo(1, $item[Eleven-Foot Pole]);
+		if(needPole)
+		{
+			auto_buyUpTo(1, $item[Eleven-Foot Pole]);
+		}
 		auto_buyUpTo(1, $item[Pick-O-Matic Lockpicks]);
 		if(!possessEquipment($item[Ring of Detect Boring Doors]))	//do not buy a second one if already equipped
 		{
@@ -620,7 +634,11 @@ boolean LX_dailyDungeonToken()
 	}
 	
 	//if you can not use the cubeling then pull the missing tools if possible
-	pullXWhenHaveY($item[Eleven-Foot Pole], 1, 0);
+	if(needPole)
+	{
+		// don't need the Eleven-foot Pole if we have the Candy Cane Sword Cane as it adds turn free NCs.
+		pullXWhenHaveY($item[Eleven-Foot Pole], 1, 0);
+	}
 	if(!possessEquipment($item[Ring of Detect Boring Doors]))	//do not pull a second one if already equipped
 	{
 		pullXWhenHaveY($item[Ring of Detect Boring Doors], 1, 0);
@@ -808,6 +826,8 @@ item LX_getDesiredWorkshed(){
 	//return the actual item name in case a shorthand is used
 	switch(currentWorkshed)
 	{
+		case "takerspace":
+			return $item[TakerSpace letter of Marque];
 		case "model train set":
 		case "train":
 			return $item[model train set];
@@ -875,31 +895,37 @@ boolean LX_setWorkshed(){
 		//Check if there is an existing shed. We only want to go into this if statement once to use the best available workshed
 		if(existingShed == $item[none])
 		{
-			if ((auto_is_valid($item[model train set])) && (item_amount($item[model train set]) > 0))
+			if (canSetWorkshed($item[model train set]))
 			{
 				use(1, $item[model train set]);
 				auto_log_info("Installed your model train set");
 				return true;
 			}
-			if ((auto_is_valid($item[Asdon Martin keyfob (on ring)])) && (item_amount($item[Asdon Martin keyfob (on ring)]) > 0))
+			if (canSetWorkshed($item[Asdon Martin keyfob (on ring)]))
 			{
 				use(1, $item[Asdon Martin keyfob (on ring)]);
 				auto_log_info("Installed your Asdon Martin keyfob");
 				return true;
 			}
-			if ((auto_is_valid($item[cold medicine cabinet])) && (item_amount($item[cold medicine cabinet]) > 0))
+			if (canSetWorkshed($item[cold medicine cabinet]))
 			{
 				use(1, $item[cold medicine cabinet]);
 				auto_log_info("Installed your cold medicine cabinet");
 				return true;
 			}
-			if ((auto_is_valid($item[little geneticist dna-splicing lab])) && (item_amount($item[little geneticist dna-splicing lab]) > 0))
+			if (canSetWorkshed($item[TakerSpace letter of Marque]))
+			{
+				use(1, $item[TakerSpace letter of Marque]);
+				auto_log_info("Installed your TakerSpace letter of Marque");
+				return true;
+			}
+			if (canSetWorkshed($item[little geneticist dna-splicing lab]))
 			{
 				use(1, $item[little geneticist dna-splicing lab]);
 				auto_log_info("Installed your little geneticist dna-splicing lab");
 				return true;
 			}
-			if ((auto_is_valid($item[portable mayo clinic])) && (item_amount($item[portable mayo clinic]) > 0))
+			if (canSetWorkshed($item[portable mayo clinic]))
 			{
 				use(1, $item[portable mayo clinic]);
 				auto_log_info("Installed your portable mayo clinic");
@@ -911,25 +937,25 @@ boolean LX_setWorkshed(){
 		//once we have enough fasteners and only if we are currently using the model train set
 		if((fastenerCount() >= 30 && lumberCount() >= 30) && existingShed == $item[model train set])
 		{
-			if ((auto_is_valid($item[Asdon Martin keyfob (on ring)])) && (item_amount($item[Asdon Martin keyfob (on ring)]) > 0))
+			if (canSetWorkshed($item[Asdon Martin keyfob (on ring)]))
 			{
 				use(1, $item[Asdon Martin keyfob (on ring)]);
 				auto_log_info("Changed your workshed to Asdon Martin keyfob");
 				return true;
 			}
-			if ((auto_is_valid($item[cold medicine cabinet])) && (item_amount($item[cold medicine cabinet]) > 0))
+			if (canSetWorkshed($item[cold medicine cabinet]))
 			{
 				use(1, $item[cold medicine cabinet]);
 				auto_log_info("Changed your workshed to cold medicine cabinet");
 				return true;
 			}
-			if ((auto_is_valid($item[little geneticist dna-splicing lab])) && (item_amount($item[little geneticist dna-splicing lab]) > 0))
+			if (canSetWorkshed($item[little geneticist dna-splicing lab]))
 			{
 				use(1, $item[little geneticist dna-splicing lab]);
 				auto_log_info("Changed your workshed to little geneticist dna-splicing lab");
 				return true;
 			}
-			if ((auto_is_valid($item[portable mayo clinic])) && (item_amount($item[portable mayo clinic]) > 0))
+			if (canSetWorkshed($item[portable mayo clinic]))
 			{
 				use(1, $item[portable mayo clinic]);
 				auto_log_info("Changed your workshed to portable mayo clinic");
@@ -937,13 +963,21 @@ boolean LX_setWorkshed(){
 			}
 			auto_log_warning("You have no workshed to change to so leaving it as " + get_workshed().to_string());
 			return false; //return false if no other workshed is available
-		}		
+		}
 	}
 	return false;
 }
 
+boolean canSetWorkshed(item it) {
+	return (auto_is_valid(it)) && (item_amount(it) > 0);
+}
+
 boolean LX_ForceNC()
 {
+	if(get_property("auto_forceNonCombatSource") != "McHugeLarge left ski" || !get_property("auto_avalancheDeployed").to_boolean())
+	{
+		return false;
+	}
 	if(get_property("auto_forceNonCombatSource") != "jurassic parka" || !get_property("auto_parkaSpikesDeployed").to_boolean())
 	{
 		return false;
@@ -973,6 +1007,8 @@ boolean LX_ForceNC()
 		case $location[The Hidden Apartment Building]:
 		case $location[The Hidden Office Building]:
 			return L11_hiddenCity();
+		case $location[The eXtreme Slope]:
+			return L8_trapperQuest();
 		default:
 			auto_log_warning("Attempted to force NC in unexpected location: " + desiredNCLocation);
 			return false;

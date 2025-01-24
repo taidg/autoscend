@@ -30,6 +30,8 @@ boolean isSniffed(monster enemy, skill sk);
 boolean isSniffed(monster enemy);
 skill getSniffer(monster enemy, boolean inCombat);
 skill getSniffer(monster enemy);
+skill getCopier(monster enemy, boolean inCombat);
+skill getCopier(monster enemy);
 skill getStunner(monster enemy);
 boolean enemyCanBlocksSkills();
 boolean canSurvive(float mult, int add);
@@ -50,6 +52,7 @@ float turns_to_kill(float dmg);
 boolean combat_status_check(string mark);
 void combat_status_add(string mark);
 boolean wantToForceDrop(monster enemy);
+boolean wantToDouse(monster enemy);
 boolean canSurviveShootGhost(monster enemy, int shots);
 
 #####################################################

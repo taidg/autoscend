@@ -217,7 +217,7 @@ boolean isSniffed(monster enemy, skill sk)
 boolean isSniffed(monster enemy)
 {
 	//checks if the monster enemy is currently sniffed using any of the sniff skills
-	foreach sk in $skills[Transcendent Olfaction, Make Friends, Long Con, Perceive Soul, Gallapagosian Mating Call, Monkey Point, Offer Latte to Opponent, Motif, Hunt]
+	foreach sk in $skills[Transcendent Olfaction, Make Friends, Long Con, Perceive Soul, Gallapagosian Mating Call, Monkey Point, Offer Latte to Opponent, Motif, Hunt, McHugeLarge Slash]
 	{
 		if(isSniffed(enemy, sk)) return true;
 	}
@@ -253,13 +253,31 @@ skill getSniffer(monster enemy, boolean inCombat)
 	{
 		return $skill[Motif];
 	}
+	if (inCombat)
+	{
+		if(canUse($skill[Monkey Point], true , inCombat) && !isSniffed(enemy, $skill[Monkey Point]))
+		{
+			return $skill[Monkey Point];
+		}
+		if(canUse($skill[McHugeLarge Slash], true , inCombat) && !isSniffed(enemy, $skill[McHugeLarge Slash]) && auto_McLargeHugeSniffsLeft()>0)
+		{
+			return $skill[McHugeLarge Slash];
+		}
+	}
+	else
+	{
+		if (auto_monkeyPawWishesLeft()==1 && !isSniffed(enemy, $skill[Monkey Point]))
+		{
+			return $skill[Monkey Point];
+		}
+		if (possessEquipment($item[McHugeLarge left pole]) && !isSniffed(enemy, $skill[McHugeLarge Slash]) && auto_McLargeHugeSniffsLeft()>0)
+		{
+			return $skill[McHugeLarge Slash];
+		}
+	}
 	if(canUse($skill[Gallapagosian Mating Call], true , inCombat) && !isSniffed(enemy, $skill[Gallapagosian Mating Call]))
 	{
 		return $skill[Gallapagosian Mating Call];
-	}
-	if(canUse($skill[Monkey Point], true , inCombat) && !isSniffed(enemy, $skill[Monkey Point]))
-	{
-		return $skill[Monkey Point];
 	}
 	if(my_familiar() == $familiar[Nosy Nose] && canUse($skill[Get a Good Whiff of This Guy]) && !isSniffed(enemy,$skill[Get a Good Whiff of This Guy]))
 	{
@@ -275,6 +293,45 @@ skill getSniffer(monster enemy, boolean inCombat)
 skill getSniffer(monster enemy)
 {
 	return getSniffer(enemy, true);
+}
+
+boolean isCopied(monster enemy, skill sk)
+{
+	//checks if the monster enemy is currently copied using the specific skill sk
+	boolean retval = false;
+	switch(sk)
+	{
+		case $skill[Blow the Purple Candle\!]:
+			retval = contains_text(get_property("auto_purple_candled"), enemy);
+			break;
+		default:
+			abort("isCopied was asked to check an unidentified skill: " +sk);
+	}
+	return retval;
+}
+
+boolean isCopied(monster enemy)
+{
+	//checks if the monster enemy is currently copied using any of the copy skills
+	foreach sk in $skills[Blow the Purple Candle\!]
+	{
+		if(isCopied(enemy, sk)) return true;
+	}
+	return false;
+}
+
+skill getCopier(monster enemy, boolean inCombat)
+{
+	if((auto_haveRoman() && have_effect($effect[Everything Looks Purple]) == 0) || (have_equipped($item[Roman Candelabra]) && canUse($skill[Blow the Purple Candle\!], true, inCombat) && have_effect($effect[Everything Looks Purple]) == 0))
+	{
+		return $skill[Blow the Purple Candle\!];
+	}
+	return $skill[none];
+}
+
+skill getCopier(monster enemy)
+{
+	return getCopier(enemy, true);
 }
 
 skill getStunner(monster enemy)
@@ -534,6 +591,8 @@ string banisherCombatString(monster enemy, location loc, boolean inCombat)
 		Beancannon: item, no turn limit, no limit
 		Tennis Ball: item, no turn limit
 
+		anchor bomb: item, 30 turns
+
 		Breathe Out: per hot jelly usage
 	*/
 
@@ -553,6 +612,10 @@ string banisherCombatString(monster enemy, location loc, boolean inCombat)
 		return "skill " + $skill[Howl of the Alpha];
 	}
 
+	if(inCombat ? item_amount($item[Handful of split pea soup]) > 0 && (!(used contains "Handful of split pea soup")) && auto_is_valid($item[Handful of split pea soup]) && useFree : (item_amount($item[Handful of split pea soup]) > 0 || item_amount($item[Whirled peas]) >= 2))
+	{
+		return "item " + $item[Handful of split pea soup];
+	}
 	if((inCombat ? auto_have_skill($skill[Throw Latte on Opponent]) : possessEquipment($item[latte lovers member\'s mug])) && auto_is_valid($skill[Throw Latte On Opponent]) && !get_property("_latteBanishUsed").to_boolean() && !(used contains "Throw Latte on Opponent") && useFree)
 	{
 		return "skill " + $skill[Throw Latte on Opponent];
@@ -740,6 +803,10 @@ string banisherCombatString(monster enemy, location loc, boolean inCombat)
 	{
 		return "item " + $item[divine champagne popper];
 	}
+	if((item_amount($item[anchor bomb]) > keep) && (!(used contains "anchor bomb"))&& auto_is_valid($item[anchor bomb]) && useFree)
+	{
+		return "item " + $item[anchor bomb];
+	}
 
 	return "";
 }
@@ -890,7 +957,7 @@ string replaceMonsterCombatString(monster target, boolean inCombat)
 	{
 		return "skill " + $skill[CHEAT CODE: Replace Enemy];
 	}
-	if(canUse($item[waffle]))
+	if (canUse($item[waffle]) && !in_avantGuard())
 	{
 		return useItems($item[waffle], $item[none]);
 	}
@@ -1014,6 +1081,20 @@ boolean wantToForceDrop(monster enemy)
 	} // ed warehouse
 
 	return forceDrop;
+}
+
+boolean wantToDouse(monster enemy)
+{
+	switch (enemy)
+	{
+		case $monster[larval filthworm]:
+			return item_amount($item[filthworm hatchling scent gland  ]) == 0;
+		case $monster[filthworm drone]:
+			return item_amount($item[filthworm drone scent gland      ]) == 0;
+		case $monster[filthworm royal guard]:
+			return item_amount($item[filthworm royal guard scent gland]) == 0;
+	}
+	return false;
 }
 
 boolean canSurviveShootGhost(monster enemy, int shots) {

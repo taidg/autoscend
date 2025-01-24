@@ -329,6 +329,22 @@ void handleTracker(string used, string detail, string tracker)
 	set_property(tracker, cur);
 }
 
+void handleTracker(string used, string loc, string detail, string tracker)
+{
+	string cur = get_property(tracker);
+	if(cur != "")
+	{
+		cur = cur + ", ";
+	}
+	if(loc == "none")
+	{
+		handleTracker(used,detail,tracker);
+		return;
+	}
+	cur = cur + "(" + my_daycount() + ":" + safeString(used) + ":" + safeString(loc) + ":" + safeString(detail) + ":" + my_turncount() + ")";
+	set_property(tracker, cur);
+}
+
 boolean organsFull()
 {
 	if(my_fullness() < fullness_limit())
@@ -577,6 +593,12 @@ boolean canYellowRay(monster target)
 		{
 			return true;
 		}
+		
+		// roman candelabra, also a 75 turn cooldown
+		if(auto_haveRoman() && auto_can_equip($item[Roman Candelabra]) && auto_is_valid($skill[Blow the Yellow Candle\!]))
+		{
+			return yellowRayCombatString(target, false, $monsters[bearpig topiary animal, elephant (meatcar?) topiary animal, spider (duck?) topiary animal, Knight (Snake)] contains target) != "";
+		}
 
 		if(auto_hasRetrocape())
 		{
@@ -760,6 +782,10 @@ boolean adjustForBanish(string combat_string)
 	if(combat_string == "skill " + $skill[Monkey Slap])
 	{
 		return autoEquip($item[cursed monkey\'s paw]);
+	}
+	if(combat_string == "item " + $item[Handful of split pea soup] && item_amount($item[Handful of split pea soup]) == 0)
+	{
+		return create(1, $item[Handful of split pea soup]);
 	}
 	return true;
 }
@@ -1007,6 +1033,10 @@ boolean adjustForYellowRay(string combat_string)
 	{
 		auto_configureRetrocape("heck", "kiss");
 	}
+	if(combat_string == ("skill " + $skill[Blow the Yellow Candle\!]))
+	{
+		return autoEquip($slot[off-hand], wrap_item($item[Roman candelabra]));
+	}
 	// craft and consume 9-volt battery if we are using shocking lick and don't have any charges already
 	if(combat_string == ("skill " + $skill[Shocking Lick]) && get_property("shockingLickCharges").to_int() < 1)
 	{
@@ -1091,6 +1121,10 @@ boolean canSniff(monster enemy, location loc)
 boolean adjustForSniffingIfPossible(monster target)
 {
 	skill sniffer = getSniffer(target, false);
+	if(sniffer == $skill[McHugeLarge Slash])
+	{
+		return autoEquip($item[McHugeLarge left pole]);
+	}
 	if(sniffer == $skill[Monkey Point])
 	{
 		return autoEquip($item[cursed monkey\'s paw]);
@@ -1105,6 +1139,30 @@ boolean adjustForSniffingIfPossible(monster target)
 boolean adjustForSniffingIfPossible()
 {
 	return adjustForSniffingIfPossible($monster[none]);
+}
+
+boolean canCopy(monster enemy, location loc)
+{
+	if(!auto_wantToCopy(enemy, loc))
+	{
+		return false;
+	}
+	return getCopier(enemy, false) != $skill[none];
+}
+
+boolean adjustForCopyIfPossible(monster target)
+{
+	skill copier = getCopier(target, false);
+	if(copier == $skill[Blow the Purple Candle\!])
+	{
+		return autoEquip($item[Roman Candelabra]);
+	}
+	return false;
+}
+
+boolean adjustForCopyIfPossible()
+{
+	return adjustForCopyIfPossible($monster[none]);
 }
 
 boolean hasTorso()
@@ -1313,10 +1371,13 @@ boolean cloverUsageInit(boolean override)
 		return true;
 	}
 	
+	set_property("auto_luckySource","none");
+	
 	if (auto_AprilSaxLuckyLeft() > 0)
 	{
 		if (auto_playAprilSax()) {
 			auto_log_info("Clover usage initialized, using Apriling sax.");
+			set_property("auto_luckySource",to_string($item[Apriling Band Saxophone]));
 			return true;
 		}
 		else
@@ -1331,7 +1392,8 @@ boolean cloverUsageInit(boolean override)
 		use_skill($skill[Aug. 2nd: Find an Eleven-Leaf Clover Day]);
 		if (have_effect($effect[Lucky!]) > 0)
 		{
-			auto_log_info("Clover usage initialized");
+			auto_log_info("Clover usage initialized using August Scepter.");
+			set_property("auto_luckySource",to_string($item[August Scepter]));
 			return true;
 		}
 		else
@@ -1351,7 +1413,8 @@ boolean cloverUsageInit(boolean override)
 		use(1, $item[11-Leaf Clover]);
 		if (have_effect($effect[Lucky!]) > 0)
 		{
-			auto_log_info("Clover usage initialized");
+			auto_log_info("Clover usage initialized using clover.");
+			set_property("auto_luckySource",to_string($item[11-Leaf Clover]));
 			return true;
 		}
 		else
@@ -1373,7 +1436,8 @@ boolean cloverUsageInit(boolean override)
 			chew(1, $item[[10883]Astral Energy Drink]);
 			if (have_effect($effect[Lucky!]) > 0)
 			{
-				auto_log_info("Clover usage initialized");
+				auto_log_info("Clover usage initialized using Astral Energy Drink");
+				set_property("auto_luckySource",to_string($item[[10883]Astral Energy Drink]));
 				return true;
 			}
 			else
@@ -1417,6 +1481,11 @@ boolean cloverUsageFinish()
 	if(have_effect($effect[Lucky!]) > 0)
 	{
 		abort("Wandering adventure interrupted our clover adventure (" + my_location() + ").");
+	}
+	else
+	{
+		handleTracker(get_property("auto_luckySource"), my_location().to_string(), get_property("lastEncounter"), "auto_lucky");
+		set_property("auto_luckySource", "none");
 	}
 	return true;
 }
@@ -1727,7 +1796,7 @@ boolean isFreeMonster(monster mon)
 boolean isFreeMonster(monster mon, location loc)
 {
 	//No free fights in Avant Guard. Well, there are, but they now have non-free bodyguards so anything that is free now costs a turn
-	if(in_ag())
+	if (in_avantGuard())
 	{
 		return false;
 	}
@@ -1771,7 +1840,7 @@ boolean isFreeMonster(monster mon, location loc)
 	}
 
 	if($locations[Shadow Rift (The Ancient Buried Pyramid), Shadow Rift (The Hidden City), Shadow Rift (The Misspelled Cemetary)] contains loc
-		&& have_effect($effect[shadow affinity]) > 0 && !in_ag())
+		&& have_effect($effect[shadow affinity]) > 0 && !in_avantGuard())
 	{
 		return true;
 	}
@@ -1841,24 +1910,11 @@ boolean LX_summonMonster()
 	// summon mountain man if we know the ore we need and still need 2 or more
 	// don't summon if we have model train set as it is an easy source of ore
 	item oreGoal = to_item(get_property("trapperOre"));
-	if(internalQuestStatus("questL08Trapper") < 2 && get_workshed() != $item[model train set] && oreGoal != $item[none] && 
+	if(internalQuestStatus("questL08Trapper") < 2 && auto_haveTrainSet() && oreGoal != $item[none] && 
 		item_amount(oreGoal) < 2 && canYellowRay() && canSummonMonster($monster[mountain man]))
 	{
 		adjustForYellowRayIfPossible();
 		if(summonMonster($monster[mountain man])) return true;
-	}
-
-	// only summon NSA if in hardcore as we will pull items in normal runs
-	if(internalQuestStatus("questL08Trapper") < 3 && in_hardcore() && my_level() >= 8 && !get_property("auto_L8_extremeInstead").to_boolean())
-	{
-		auto_log_debug("Thinking about summoning ninja snowman assassin");
-		boolean wantSummonNSA = item_amount($item[ninja rope]) < 1 || 
-			item_amount($item[ninja carabiner]) < 1 || 
-			item_amount($item[ninja crampons]) < 1;
-		if(wantSummonNSA && canSummonMonster($monster[Ninja Snowman Assassin]))
-		{
-			if(summonMonster($monster[Ninja Snowman Assassin])) return true;
-		}
 	}
 
 	if(auto_is_valid($item[Smut Orc Keepsake Box]) && item_amount($item[Smut Orc Keepsake Box]) == 0 && my_level() >= 9 && 
@@ -1954,6 +2010,11 @@ boolean summonMonster(monster mon, boolean speculative)
 {
 	auto_log_debug((speculative ? "Checking if we can" : "Trying to") + " summon " + mon, "blue");
 
+	if(!speculative)
+	{
+		set_property("auto_nonAdvLoc", true);
+	}
+
 	if (!speculative)
 	{
 		// Equip the combat lover's locket if we're missing a monster about to be summoned
@@ -1961,6 +2022,12 @@ boolean summonMonster(monster mon, boolean speculative)
 		{
 			auto_log_info('We want to get the "' + mon + '" monster into the combat lover\'s locket from summoning, so we\'re bringing it along.', "blue");
 			autoEquip($item[combat lover\'s locket]);
+		}
+		// Equip a copier if we want to copy it
+		if(auto_wantToCopy(mon))
+		{
+			auto_log_info("We want to copy the " + mon + " so adjusting for our equipment if possible.");
+			adjustForCopyIfPossible(mon);
 		}
 	}
 	// methods which require specific circumstances
@@ -2250,7 +2317,7 @@ boolean evokeEldritchHorror()
 
 boolean fightScienceTentacle()
 {
-	if(in_koe())
+	if (in_koe() || in_avantGuard())
 	{
 		return false;
 	}
@@ -2284,6 +2351,7 @@ boolean fightScienceTentacle()
 		return false;
 	}
 
+	set_property("auto_nonAdvLoc", true);
 	temp = visit_url("choice.php?whichchoice=1201&pwd=&option=" + abortChoice);
 	set_property("auto_nextEncounter","Eldritch Tentacle");
 	string[int] pages;
@@ -2535,6 +2603,7 @@ int doNumberology(string goal, boolean doIt, string option)
 
 		if(goal == "battlefield")
 		{
+			set_property("auto_nonAdvLoc", true);
 			string[int] pages;
 			pages[0] = "runskillz.php?pwd&action=Skillz&whichskill=144&quantity=1";
 			pages[1] = "choice.php?whichchoice=1103&pwd=&option=1&num=" + numberology[numberwang];
@@ -3134,6 +3203,11 @@ void auto_log_debug(string s)
 	auto_log(s, "black", 3);
 }
 
+boolean auto_turbo()
+{
+	return get_property("auto_turbo").to_boolean();
+}
+
 boolean auto_can_equip(item it)
 {
 	return auto_can_equip(it, it.to_slot());
@@ -3471,6 +3545,21 @@ boolean auto_wantToReplace(monster enemy, location loc)
 	boolean [monster] toReplace = auto_getMonsters("replace");
 	set_location(locCache);
 	return toReplace[enemy];
+}
+
+boolean auto_wantToCopy(monster enemy, location loc)
+{
+	location locCache = my_location();
+	set_location(loc);
+	boolean [monster] toCopy = auto_getMonsters("copy");
+	set_location(locCache);
+	return toCopy[enemy];
+}
+
+boolean auto_wantToCopy(monster enemy)
+{
+	boolean [monster] toCopy = auto_getMonsters("copy");
+	return toCopy[enemy];
 }
 
 int total_items(boolean [item] items)
@@ -4139,6 +4228,16 @@ boolean _auto_forceNextNoncombat(location loc, boolean speculative)
 		set_property("auto_forceNonCombatSource", "Apriling tuba");
 		return true;
 	}
+	else if(auto_haveMcHugeLargeSkis() && get_property("_mcHugeLargeAvalancheUses") < 3 && (!in_wereprof() || !is_professor())) // if we're a professor, we can't use the spikes
+	{
+		if(speculative) return true;
+		// avalanche require a combat to active
+		// this property will cause the left ski to be eqipped and avalanche deployed next combat
+		set_property("auto_forceNonCombatSource", "McHugeLarge left ski");
+		// track desired NC location so we know where to go when avalanche is ready
+		set_property("auto_forceNonCombatLocation", loc);
+		return true;
+	}
 	else if(auto_hasParka() && get_property("_spikolodonSpikeUses") < 5 && hasTorso() && (!in_wereprof() || !is_professor())) // if we're a professor, we can't use the spikes
 	{
 		if(speculative) return true;
@@ -4488,6 +4587,15 @@ int meatReserve()
 	return reserve_gnasir + reserve_diary + reserve_zeppelin + reserve_palindome + reserve_island + reserve_extra;
 }
 
+boolean auto_wishForEffectIfNeeded(effect wish)
+{
+	if (have_effect(wish)>0)
+	{
+		return true;
+	}
+	return auto_wishForEffect(wish);
+}
+
 boolean auto_wishForEffect(effect wish)
 {
 	// First try to use the monkey paw
@@ -4566,4 +4674,61 @@ boolean have_workshed() {
 		return false;
 	}
 	return true;
+}
+
+int remainingNCForcesToday()
+{
+	int forces = 0;
+	forces = forces + auto_pillKeeperUses();
+	forces = forces + auto_AprilTubaForcesLeft();
+	forces = forces + auto_McLargeHugeForcesLeft();
+	forces = forces + auto_ParkaSpikeForcesLeft();
+	forces = forces + auto_cinchForcesLeft();
+	
+	return forces;
+}
+
+float substat_to_level()
+{
+	return substat_to_level(my_basestat(stat_to_substat(my_primestat())));
+}
+
+float substat_to_level(int n)
+{
+	if(n <= 16)
+	{
+		return 1; // All substats less than 16 are level 1, before the formula takes effect
+	}
+	return square_root( square_root(n) - 4 ) + 1;
+}
+
+stat stat_to_substat(stat s)
+{
+	switch(s)
+	{
+		case $stat[muscle]:
+			return $stat[submuscle];
+		case $stat[mysticality]:
+			return $stat[submysticality];
+		case $stat[moxie]:
+			return $stat[submoxie];
+	}
+	return s;
+}
+
+float stat_exp_percent(stat s)
+{
+	switch(s)
+	{
+		case $stat[muscle]:
+		case $stat[submuscle]:
+			return numeric_modifier($modifier[muscle experience percent]);
+		case $stat[mysticality]:
+		case $stat[submysticality]:
+			return numeric_modifier($modifier[mysticality experience percent]);
+		case $stat[moxie]:
+		case $stat[submoxie]:
+			return numeric_modifier($modifier[moxie experience percent]);
+	}
+	return 0;
 }

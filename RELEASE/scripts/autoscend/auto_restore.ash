@@ -934,6 +934,9 @@ __RestorationOptimization __calculate_objective_values(int hp_goal, int mp_goal,
 		if(metadata.type == "item")
 		{
 			item i = to_item(metadata.name);
+			if (i.dailyusesleft == 0) {
+				return false;
+			}
 			boolean mall_buyable = can_interact() && auto_mall_price(i) > 0;
 			boolean npc_meat_buyable = npc_price(i) > 0;
 			boolean coinmaster_buyable = i.seller != $coinmaster[none] && is_accessible(i.seller) && get_property("autoSatisfyWithCoinmasters").to_boolean();
@@ -1708,6 +1711,20 @@ boolean __restore(string resource_type, int goal, int meat_reserve, boolean useF
 
 		if(!success)
 		{
+			// did we have exactly one option and fail to cast rest upside down because we have a back item with +HP/MP?
+			if (count(options) == 1 && options[0].metadata.name == "rest upside down") {
+				item current_back = equipped_item($slot[back]);
+				// do we have less than max minus what the back item provides
+				if (current_resource() < max_resource() - numeric_modifier(current_back, "Maximum " + resource_type))
+				{
+					auto_log_info("Manually equipping the bat wings");
+					equip($item[bat wings]);
+					recover_discount_pants();
+					success = use_skill(1, $skill[rest upside down]);
+					equip(current_back);
+					return success;
+				}
+			}
 			auto_log_warning("Target "+resource_type+" => " + goal + " - Uh oh. All restore options tried ("+count(options)+") failed. Sorry.", "red");
 			recover_discount_pants();
 			return false;
