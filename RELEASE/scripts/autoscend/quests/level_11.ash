@@ -828,6 +828,16 @@ boolean L11_blackMarket()
 		set_property("screechDelay", true);
 		return false; // Can't get the reassembled blackbird if beasts are banished
 	}
+	
+	if(in_quantumTerrarium())
+	{
+		//swap to the blackbird or crow if we can
+		if(!($familiars[Reassembled Blackbird, Reconstituted Crow] contains my_familiar()))
+		{
+			qt_FamiliarSwap($familiar[Reassembled Blackbird]);
+			qt_FamiliarSwap($familiar[Reconstituted Crow]);
+		}
+	}
 
 	if ($location[The Black Forest].turns_spent > 12 && !in_avantGuard())
 	{
@@ -1334,7 +1344,14 @@ boolean L11_aridDesert()
 
 		if (dbr.fam != $familiar[none])
 		{
-			handleFamiliar(dbr.fam);
+			if(in_quantumTerrarium())
+			{
+				qt_FamiliarSwap(dbr.fam);
+			}
+			else
+			{
+				handleFamiliar(dbr.fam);
+			}
 		}
 		if (dbr.weapon != $item[none])
 		{
@@ -2937,6 +2954,12 @@ boolean L11_palindome()
 	}
 
 	if (!possessEquipment($item[Talisman o\' Namsilat])) {
+		return false;
+	}
+
+	if (my_meat() < ((2 - (item_amount($item[Photograph Of A Red Nugget]) + item_amount($item[Photograph Of God]))) * 500) && internalQuestStatus("questL11Palindome") < 1)
+	{
+		auto_log_info("Not enough meat for the Palindome");
 		return false;
 	}
 

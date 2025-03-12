@@ -547,7 +547,7 @@ boolean auto_canCircadianRhythm();
 boolean auto_circadianRhythmTarget(monster target);
 boolean auto_circadianRhythmTarget(phylum target);
 boolean auto_haveEagle();
-familiar auto_forceEagle();
+familiar auto_forceEagle(familiar famChoice);
 boolean auto_haveJillOfAllTrades();
 void auto_handleJillOfAllTrades();
 boolean auto_haveBurningLeaves();
@@ -617,6 +617,7 @@ boolean auto_equipAllMcHugeLarge();
 boolean auto_openMcLargeHugeSkis();
 int auto_McLargeHugeForcesLeft();
 int auto_McLargeHugeSniffsLeft();
+boolean auto_haveCupidBow();
 
 ########################################################################################################
 //Defined in autoscend/paths/actually_ed_the_undying.ash
@@ -1521,6 +1522,7 @@ boolean autoChooseFamiliar(location place);
 boolean haveSpleenFamiliar();
 boolean wantCubeling();
 void preAdvUpdateFamiliar(location place);
+boolean auto_needsGoodFamiliarEquipment();
 
 ########################################################################################################
 //Defined in autoscend/auto_list.ash
@@ -1937,6 +1939,7 @@ boolean auto_wantToCopy(monster enemy, location loc);
 boolean auto_wantToCopy(monster enemy);
 int total_items(boolean [item] items);
 boolean auto_badassBelt();
+void meatReserveMessage();
 void auto_interruptCheck(boolean debug);
 void auto_interruptCheck();
 element currentFlavour();
