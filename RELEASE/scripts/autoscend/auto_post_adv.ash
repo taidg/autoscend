@@ -365,7 +365,7 @@ boolean auto_post_adventure()
 		{
 			use_skill(1, $skill[Disco Nap]);
 		}
-		else if(isGeneralStoreAvailable() && auto_is_valid($item[Anti-Anti-Antidote]))
+		else if(isGalaktikAvailable() && auto_is_valid($item[Anti-Anti-Antidote]))
 		{
 			auto_buyUpTo(1, $item[Anti-Anti-Antidote]);
 			use(1, $item[Anti-Anti-Antidote]);
@@ -923,7 +923,7 @@ boolean auto_post_adventure()
 		buffMaintain($effect[Wisdom of Others]);
 		// Only use these if we've got plenty of meat and aren't max level
 		// Otherwise we'll autosell them
-		if(my_meat() > meatReserve()+1000 && my_level()<13)
+		if(!auto_ignoreExperience() && my_level()<13)
 		{
 			foreach it in $items[azurite, eye agate, lapis lazuli]
 			{

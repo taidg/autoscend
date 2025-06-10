@@ -907,6 +907,10 @@ boolean L12_filthworms()
 	{
 		auto_log_info("Will steal stench glands using FLUDA douse");
 	}
+	else if(auto_swoopsRemaining()>0)
+	{
+		auto_log_info("Will steal stench glands using Swoop like a Bat");
+	}
 	else if(auto_fireExtinguisherCharges() > 10)
 	{
 		auto_log_info("Will steal stench glands using polar vortex ability of [Industrial Fire Extinguisher]");
@@ -1741,11 +1745,21 @@ boolean L12_themtharHills()
 	}
 	
 	handleFamiliar("meat");
-	
-	//can only do this in Avant Guard in 6 turns in HC or 8 turns in Normal. Need the August Scepter. If going turbo, can't get enough waffles so don't even bother with this
+
+	//can only do this in Avant Guard in 6 turns in HC or 8 turns in Normal. Need the August Scepter. If day 1, can't get enough waffles so don't even bother with this
 	set_property("auto_delayWar", false);
-	if(in_avantGuard() && auto_haveAugustScepter() && !(auto_turbo()))
+	if(in_avantGuard())
 	{
+		if (!auto_haveAugustScepter()) {
+			// no scepter = no waffles = impossible
+			// macrometeorite / replace enemy use different code and don't work for this
+			set_property("auto_skipNuns", "true");
+			return false;
+		}
+		if (my_daycount() == 1) {
+			// don't have enough waffles yet
+			return false;
+		}
 		auto_log_info("Checking how much meat drop we can get");
 		if((in_hardcore() && item_amount($item[waffle]) <= 6 && $location[The Themthar Hills].turns_spent + item_amount($item[waffle]) > 6) ||
 		(item_amount($item[waffle]) <= 8 && $location[The Themthar Hills].turns_spent + item_amount($item[waffle]) > 8))
@@ -1810,10 +1824,11 @@ boolean L12_themtharHills()
 		meat_need = meat_need - 100;
 	}
 
-	if(canChangeFamiliar())
+	familiar famChoice = get_property("auto_familiarChoice").to_familiar();
+	if(canChangeFamiliar() && famChoice != $familiar[none])
 	{
 		// if we're in a 100% run, this property returns "none" which will unequip our familiar and ruin a 100% run.
-		use_familiar(to_familiar(get_property("auto_familiarChoice")));
+		use_familiar(famChoice);
 	}
 	equipMaximizedGear();
 	float meatDropHave = provideMeat(1800, true, true);
@@ -1869,6 +1884,7 @@ boolean L12_themtharHills()
 		}
 	}
 
+	auto_getCitizenZone("meat"); //because it can take a turn, get this before getting any other buffs
 	provideMeat(1800, true, false); // Do as much as possible to get meat drops
 
 	{

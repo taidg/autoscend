@@ -192,7 +192,7 @@ boolean auto_run_choice(int choice, string page)
 			{
 				run_choice(6); // advance immateria quest
 			}
-			else if (options contains 5)
+			else if (options contains 5 && L10_needUmbrella())
 			{
 				run_choice(5); // get titanium umbrella, metallic A, SGEEA and a penultimate fantasy chest
 			}
@@ -458,6 +458,12 @@ boolean auto_run_choice(int choice, string page)
 		case 797: // Let's Workshop This a Little (The Old Landfill)
 			oldLandfillChoiceHandler(choice);
 			break;
+		case 804:
+			run_choice(2); //Trick or Treat!
+			break;
+		case 806:
+			run_choice(2); //A Fun-Size Dilemma
+			break;
 		case 822: // The Prince's Ball (In the Restroom)
 		case 823: // The Prince's Ball (On the Dance Floor)
 		case 824: // The Prince's Ball (The Kitchen)
@@ -717,7 +723,7 @@ boolean auto_run_choice(int choice, string page)
 		case 1434: // Sneaky, Sneaky (Orcish Frat House (Verge of War)) (Cartography)
 		case 1435: // Leading Yourself Right to Them (Map the Monsters)
 		case 1436: // Billiards Room Options (Cartography)
-			cartographyChoiceHandler(choice);
+			cartographyChoiceHandler(choice, page);
 			break;
 		case 1467: // Poetic Justice (Cleaver)
 		case 1468: // Aunts not Ants (Cleaver)
@@ -774,6 +780,9 @@ boolean auto_run_choice(int choice, string page)
 			break;
 		case 1525:
 			dartChoiceHandler(choice, options);
+			break;
+		case 1557:  // Peering Through Your Peridot (Peridot of Peril zone monster selection choice)
+			peridotChoiceHandler(choice, page);
 			break;
 		default:
 			break;

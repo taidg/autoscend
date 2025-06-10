@@ -604,6 +604,11 @@ generic_t zone_combatMod(location loc)
 		{
 			value = -80;
 		}
+		else if (in_bugbear() && bugbear_BioDataRemaining($location[Engineering]) > 0)
+		{
+			// When hunting bugbears, we want normal combats, not NC combats
+			value = 10;
+		}
 		else
 		{
 			//Let us not worry about throttling the Airship
@@ -1982,7 +1987,7 @@ generic_t zone_difficulty(location loc)
 boolean zone_hasLuckyAdventure(location loc)
 {
 	if ($locations[Vanya's Castle, The Fungus Plains, Megalo-City, Hero's Field, A Maze of Sewer Tunnels,A Mob of Zeppelin Protesters,A-Boo Peak,An Octopus's Garden,Art Class,
-	Battlefield (Cloaca Uniform),Battlefield (Dyspepsi Uniform),Battlefield (No Uniform),Burnbarrel Blvd.,Camp Logging Camp,Chemistry Class,
+	Cola Wars Battlefield (Cloaca Uniform),Cola Wars Battlefield (Dyspepsi Uniform),The Cola Wars Battlefield,Burnbarrel Blvd.,Camp Logging Camp,Chemistry Class,
 	Cobb's Knob Barracks,Cobb's Knob Harem,Cobb's Knob Kitchens,Cobb's Knob Laboratory,Cobb's Knob Menagerie\, Level 2,Cobb's Knob Treasury,
 	Elf Alley,Exposure Esplanade,Frat House,Frat House (Frat Disguise),Guano Junction,Hippy Camp,Hippy Camp (Hippy Disguise),Itznotyerzitz Mine,
 	Lair of the Ninja Snowmen,Lemon Party,Madness Reef,Oil Peak,Outskirts of Camp Logging Camp,Pandamonium Slums,Shop Class,South of the Border,
@@ -2213,7 +2218,6 @@ boolean[location] monster_to_location(monster target)
 	case $location[The Typical Tavern Cellar]:
 	case $location[The Spooky Forest]:
 	case $location[The Hidden Temple]:
-	case $location[8-Bit Realm]:
 	case $location[The Black Forest]:
 	case $location[The Beanbat Chamber]:
 	case $location[The Bat Hole Entrance]:
