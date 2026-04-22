@@ -609,8 +609,13 @@ boolean canYellowRay(monster target)
 
 	if(have_effect($effect[Everything Looks Yellow]) <= 0)
 	{
-		
-		// first, do any necessary prep to use a yellow ray
+		// parka has 100 turn cooldown, but is a free-kill and has 0 meat cost, so prioritised over yellow rocket
+		if(auto_hasParka() && auto_is_valid($skill[Spit jurassic acid]) && hasTorso())
+		{
+			return yellowRayCombatString(target, false, $monsters[bearpig topiary animal, elephant (meatcar?) topiary animal, spider (duck?) topiary animal, Knight (Snake)] contains target) != "";
+		}
+
+		// Get a yellow rocket if we don't have a parka
 		if(item_amount($item[Clan VIP Lounge Key]) > 0 &&	// Need VIP access
 			get_property("_fireworksShop").to_boolean() &&	// in a clan that has the Underground Fireworks Shop
 			item_amount($item[yellow rocket]) == 0 &&		// Don't buy if we already have one
@@ -620,18 +625,30 @@ boolean canYellowRay(monster target)
 			cli_execute("acquire " + $item[yellow rocket]);
 		}
 
-		// parka has 100 turn cooldown, but is a free-kill and has 0 meat cost, so prioritised over yellow rocket
-		if(auto_hasParka() && auto_is_valid($skill[Spit jurassic acid]) && hasTorso())
-		{
-			return yellowRayCombatString(target, false, $monsters[bearpig topiary animal, elephant (meatcar?) topiary animal, spider (duck?) topiary animal, Knight (Snake)] contains target) != "";
-		}
-
 		// Yellow rocket has the lowest cooldown, and is unlimited, so prioritize over other sources
 		if (item_amount($item[yellow rocket]) > 0 &&
 			auto_is_valid($item[yellow rocket]) &&
 			yellowRayCombatString(target, false, $monsters[bearpig topiary animal, elephant (meatcar?) topiary animal, spider (duck?) topiary animal, Knight (Snake)] contains target) != "")
 		{
 			return true;
+		}
+
+		// acquire a spitball if we haven't gotten any of the above
+		if(auto_haveAprilShowerShield() &&			//need April Shower Thoughts Shield
+		item_amount($item[spitball]) == 0 &&		//don't buy if we already have one
+		auto_is_valid($item[spitball]) &&			//or if it's not valid
+		item_amount($item[glob of wet paper]) > 0)	//need at least 1 glob of wet paper to buy one
+		{
+			if(buy($coinmaster[Using your Shower Thoughts], 1, $item[spitball]))
+			{
+				handleTracker($item[April Shower Thoughts Shield],$item[spitball],"auto_iotm_claim");
+			}
+		}
+
+		// Spitball from April Shower Thoughts Shiled has a 100 turn cd, but is a free-kill but is not unlimited
+		if(auto_is_valid($item[spitball]) && item_amount($item[spitball]) > 0)
+		{
+			return yellowRayCombatString(target, false, $monsters[bearpig topiary animal, elephant (meatcar?) topiary animal, spider (duck?) topiary animal, Knight (Snake)] contains target) != "";
 		}
 		
 		// roman candelabra, also a 75 turn cooldown
@@ -699,6 +716,27 @@ float [monster] auto_combat_appearance_rates(location place, boolean queue)
 
 float [monster] auto_combat_appearance_rates(location place)
 {	return auto_combat_appearance_rates(place, false);
+}
+
+float auto_zonePhylumPercent(location loc, phylum phyl)
+{
+	//Looks at potential monsters in a zone and returns the % of them that match the phylum
+	int count = 0;
+	int total = 0;
+	foreach mon, freq in auto_combat_appearance_rates(loc)
+	{
+		if(freq<=0) continue;
+		if(mon.phylum == phyl)
+		{
+			count+=1;
+		}
+		total+=1;
+	}
+	if(total==0)
+	{
+		return 0;
+	}
+	return count/total;
 }
 
 boolean[string] auto_banishesUsedAt(location loc)
@@ -844,9 +882,17 @@ boolean adjustForBanish(string combat_string)
 	{
 		return autoEquip($item[cursed monkey\'s paw]);
 	}
+	if(combat_string == "skill " + $skill[Sea *dent: Throw a Lightning Bolt])
+	{
+		return autoEquip($item[Monodent of the Sea]);
+	}
 	if(combat_string == "item " + $item[Handful of split pea soup] && item_amount($item[Handful of split pea soup]) == 0)
 	{
 		return create(1, $item[Handful of split pea soup]);
+	}
+	if(combat_string == "skill "+$skill[Breathe Out] && auto_breatheOutsLeft() == 0 && available_amount($item[hot jelly]) > 0 && spleen_left() > 1)
+	{
+		return autoChew(1, $item[hot jelly]);
 	}
 	if(combat_string == "skill "+$skill[Punch Out Your Foe] && auto_punchOutsLeft() == 0 && available_amount($item[scoop of pre-workout powder]) > 0 && spleen_left() > 3)
 	{
@@ -906,7 +952,10 @@ boolean auto_wantToFreeRun(monster enemy, location loc)
 
 boolean canFreeRun(monster enemy, location loc)
 {
-	// are there any restrictions on free running?
+	// pokefam cannot use skills or items
+	if (in_pokefam()) {
+		return false;
+	}
 	return true;
 }
 
@@ -989,7 +1038,7 @@ string freeRunCombatString(monster enemy, location loc, boolean inCombat)
 	if(canChangeToFamiliar($familiar[Frumious Bandersnatch]))
 	{
 		// TODO add fam weight buffing
-		int banderRunsLeft = floor((familiar_weight($familiar[Frumious Bandersnatch]) + weight_adjustment()) / 5) - get_property("_banderRunaways").to_int();
+		int banderRunsLeft = floor(auto_famWeight($familiar[Frumious Bandersnatch]) / 5) - get_property("_banderRunaways").to_int();
 		if(is_professor()) return "";
 		if(!inCombat)
 		{
@@ -1016,7 +1065,7 @@ string freeRunCombatString(monster enemy, location loc, boolean inCombat)
 	{
 		// TODO add fam weight buffing
 		// boots and bander share same counter
-		int banderRunsLeft = floor((familiar_weight($familiar[Pair of Stomping Boots]) + weight_adjustment()) / 5) - get_property("_banderRunaways").to_int();
+		int banderRunsLeft = floor(auto_famWeight($familiar[Pair of Stomping Boots]) / 5) - get_property("_banderRunaways").to_int();
 		if(is_professor()) return "";
 		if(!inCombat)
 		{
@@ -1146,6 +1195,10 @@ boolean adjustForYellowRay(string combat_string)
 			auto_log_error("Failed to prepare a yellow ray. yellowRayCombatString thinks we can craft a 9-volt battery but we actually could not");
 		}
 	}
+	if(combat_string == "skill " + $skill[Northern Explosion])
+	{
+		return autoEquip($item[April Shower Thoughts Shield]);
+	}
 	return true;
 }
 
@@ -1264,6 +1317,492 @@ boolean adjustForCopyIfPossible(monster target)
 boolean adjustForCopyIfPossible()
 {
 	return adjustForCopyIfPossible($monster[none]);
+}
+
+int banishSources()
+{
+	//This should only look at banishes we have programmed
+	//IOTM-derived skills should be checked against the IOTM, not the skill/item if the skill/IOTM is not tradeable 
+	//
+	// Look at auto_combat_util.ash
+	// Monster Banishes
+	// Spring Kick: Equipment
+	// Peel Out: Skill
+	// Howl of the Alpha: Skill
+	// Throw Latte on Opponent: Equipment
+	// Give Your Opponent The Stinkeye: Equipment
+	// Creepy Grin: Equipment
+	// Baleful Howl: Skill
+	// Thunder Clap: Skill
+	// Asdon Martin: Campground
+	// Curse of Vacation: Skill
+	// Show Them Your Ring: Equipment
+	// Breathe Out: Skill, from hot jelly
+	// Batter Up!: Skill
+	// Zootomist Kick Banish: Skill
+	// Banishing Shout: Skill
+	// Walk Away From Explosion: Skill
+	// Talk About Politics: Equipment
+	// Reflex Hammer: Equipment
+	// Show Your Boring Familiar Pictures: Equipment
+	// Bowl a Curveball: Item
+	// Feel Hatred: Skill
+	// [7510]Punt: Skill
+	// Snokebomb: Skill
+	// stuffed yam stinkbomb: Item
+	// handful of split pea soup: Item
+	// Punch Out Your Foe: Skill, from pre-workout powder, which is automatically consumed if necessary
+	// [28021]Punt: Skill
+	// Saber Force Banish: Equipment
+	// KGB Tranquilizer Dart: Equipment
+	// Monkey Slap: Equipment
+	// Sea *dent Lightning Bolt: Equipment
+	// Unleash Nanites: Familiar
+	// Beancannon: Skill
+	// human musk: Item
+	// Louder Than Bomb: Item
+	// tennis ball: Item
+	// deathchucks: Item
+	// divine champagne popper: Item
+	// anchor bomb: Item
+	//
+	// Phylum Banishes
+	// Patriotic Screech: Familiar
+
+	int count = 0;
+	foreach sk in $skills[peel out, Howl of the Alpha, Baleful Howl, Thunder Clap, Curse Of Vacation, Breathe Out, Batter Up!,
+	Banishing Shout, Walk Away From Explosion, Feel Hatred, [7510]Punt, Snokebomb, Punch Out Your Foe, [28021]Punt, Beancannon]
+	{
+		if(auto_have_skill(sk))
+		{
+			count +=1;
+			continue;
+		}
+	}
+	if (canUse(getZooKickBanish())) {
+		count += 1;
+	}
+	//equipment
+	foreach eq in $items[spring shoes, latte lovers member\'s mug, stinky cheese eye, V for Vivala mask, Mafia middle finger ring, Pantsgiving,
+	Lil\' Doctor&trade; bag, familiar scrapbook, Fourth of May cosplay saber, Kremlin\'s Greatest Briefcase, cursed monkey\'s paw, Monodent of the Sea]
+	{
+		if(possessEquipment(eq) && auto_can_equip(eq))
+		{
+			count +=1;
+			continue;
+		}
+	}
+	//combat items/IOTMs/IOTM-Derived items that aren't equipment
+	foreach it in $items[Cosmic Bowling Ball, stuffed yam stinkbomb, Handful of split pea soup, human musk,
+	Louder Than Bomb, Tennis Ball, Deathchucks, divine champagne popper, anchor bomb,
+	hot jelly, scoop of pre-workout powder]
+	{
+		if(auto_is_valid(it) && item_amount(it) > 0)
+		{
+			count +=1;
+			continue;
+		}
+	}
+	//campground equipment
+	foreach it in $items[Asdon Martin keyfob (on ring)]
+	{
+		if(have_workshed() && auto_get_campground() contains it)
+		{
+			count +=1;
+			continue;
+		}
+	}
+	//familiars
+	foreach fam in $familiars[nanorhino, patriotic eagle]
+	{
+		if(auto_have_familiar(fam) && canChangeToFamiliar(fam))
+		{
+			count +=1;
+			continue;
+		}
+	}
+	return count;
+}
+
+int freeRunSources()
+{
+	//This should only look at free runs we have programmed, not specialized free runs like the short writ of habeas corpus
+	//IOTM-derived skills should be checked against the IOTM, not the skill/item if the skill/IOTM is not tradeable 
+	//
+	// Look at auto_util.ash
+	// Spring Away: Equipment
+	// Blow the Green Candle!: Equipment
+	// green smoke bomb: Item
+	// tattered scrap of paper: Item
+	// GOTO: Item
+	// Bandersnatch: Familiar
+	// Boots: Familiar
+	// (replica) navel ring: Equipment
+	// Peel Out: Skill
+	// Bowl a Curveball: Item
+	// handful of split pea soup: Item
+	// giant eraser: Item
+
+	int count = 0;
+	foreach sk in $skills[peel out]
+	{
+		if(auto_have_skill(sk))
+		{
+			count +=1;
+			continue;
+		}
+	}
+	//equipment
+	foreach eq in $items[spring shoes, roman candelabra, Navel ring of navel gazing, replica Navel ring of navel gazing]
+	{
+		if(possessEquipment(eq) && auto_can_equip(eq))
+		{
+			count +=1;
+			continue;
+		}
+	}
+	//combat items/IOTMs/IOTM-Derived items that aren't equipment
+	foreach it in $items[green smoke bomb, tattered scrap of paper, GOTO, cosmic bowling ball, handful of split pea soup, giant eraser]
+	{
+		if(auto_is_valid(it) && item_amount(it) > 0)
+		{
+			count +=1;
+			continue;
+		}
+	}
+	//familiars
+	foreach fam in $familiars[frumious bandersnatch, pair of stomping boots]
+	{
+		if(auto_have_familiar(fam) && canChangeToFamiliar(fam))
+		{
+			count +=1;
+			continue;
+		}
+	}
+	return count;
+}
+
+int freeKillSources()
+{
+	//This should only look at free kills we have programmed
+	//IOTM-derived skills should be checked against the IOTM, not the skill/item if the skill/IOTM is not tradeable 
+	//
+	// Look at auto_combat_default_stage2.ash
+	// Kill without Items
+	// Club 'Em Back in Time: Equipment
+	// groveling gravel: Item
+	// Kill with Items
+	// power pill: Item
+	// Lightning Strike: Skill
+	// Dart Bullseye: Equipment
+	// Zootomist Kick Kill: Skill
+	// Chest X-Ray: Equipment
+	// Shattering Punch: Skill
+	// Gingerbread Mob Hit: Skill
+	// Free-For-All: Skill
+	// replica bat-oomerang: Item
+	// shadow brick: Item
+	// Fire the Jokester's Gun: Equipment
+	// Breathitin outdoor fights: Campground
+	int count = 0;
+	foreach sk in $skills[lightning strike, shattering punch, Gingerbread Mob Hit, Free-For-All]
+	{
+		if(auto_have_skill(sk))
+		{
+			count +=1;
+			continue;
+		}
+	}
+	if (canUse(getZooKickInstaKill())) {
+		count += 1;
+	}
+	//equipment
+	foreach eq in $items[legendary seal-clubbing club, Everfull Dart Holster, Lil\' Doctor&trade; bag, The Jokester's gun]
+	{
+		if(possessEquipment(eq) && auto_can_equip(eq))
+		{
+			count +=1;
+			continue;
+		}
+	}
+	//campground equipment
+	foreach it in $items[cold medicine cabinet]
+	{
+		if(have_workshed() && auto_get_campground() contains it)
+		{
+			count +=1;
+			continue;
+		}
+	}
+	//combat items/IOTMs/IOTM-Derived items that aren't equipment
+	foreach it in $items[groveling gravel, Replica Bat-oomerang, shadow brick]
+	{
+		if(auto_is_valid(it) && item_amount(it) > 0)
+		{
+			count +=1;
+			continue;
+		}
+	}
+	return count;
+}
+
+int instaKillSources()
+{
+	//This should only look at instakills we have programmed
+	//IOTM-derived skills should be checked against the IOTM, not the skill/item if the skill/IOTM is not tradeable 
+	//
+	// Look at auto_combat_default_stage2.ash
+	// Slaughter: Skill
+	// exploding cigar: Item
+	// Release the Boots: Familiar
+	int count = 0;
+	foreach sk in $skills[slaughter]
+	{
+		if(auto_have_skill(sk))
+		{
+			count +=1;
+			continue;
+		}
+	}
+	//combat items/IOTMs/IOTM-Derived items that aren't equipment
+	foreach it in $items[exploding cigar]
+	{
+		if(auto_is_valid(it) && item_amount(it) > 0)
+		{
+			count +=1;
+			continue;
+		}
+	}
+	//familiars
+	foreach fam in $familiars[Pair of Stomping Boots]
+	{
+		if(auto_have_familiar(fam) && canChangeToFamiliar(fam))
+		{
+			count +=1;
+			continue;
+		}
+	}
+	return count;
+}
+
+int yellowRaySources()
+{
+	//This should only look at YRs we have programmed
+	//IOTM-derived skills should be checked against the IOTM, not the skill/item if the skill/IOTM is not tradeable 
+	//
+	// Look at auto_combat_util.ash
+	// Zootomist Kick YR: Skill
+	// Fondeluge: Skill
+	// yellowcake bomb: Item
+	// yellow rocket: Item (we don't buy it if we have a parka, but having the key doesn't prove we can buy it)
+	// Spit Jurassic Acid: Equipment
+	// spitball: Item
+	// Blow the Yellow Candle!: Equipment
+	// Unleash the Devil's Kiss: Equipment
+	// Disintegrate: Skill
+	// Ball Lightning: Skill
+	// Wrath of Ra: Skill
+	// mayo lance: Campground
+	// Flash Headlight: Skill (only if Ultrabright, but overcounting is ok)
+	// Golden Light: Item
+	// pumpkin bomb: Item
+	// Unbearable Light: Item
+	// viral video: Item
+	// micronova: Item
+	// Unleash Cowrruption: Skill, from effect from corrupted marrow
+	// Open a Big Yellow Present: Familiar
+	// Asdon Martin: Campground
+	// Northern Explosion w/ April Shower Thoughts Shield: Equipment
+	// Feel Envy: Skill
+	// Saber Force: Equipment
+	// Shocking Lick: Skill, from 9-Volt battery
+
+	int count = 0;
+	foreach sk in $skills[Fondeluge, Disintegrate, Ball Lightning, Wrath of Ra, Flash Headlight, Unleash Cowrruption, Feel Envy,
+	Shocking Lick, ]
+	{
+		if(auto_have_skill(sk))
+		{
+			count +=1;
+			continue;
+		}
+	}
+	if (canUse(getZooKickYR())) {
+		count += 1;
+	}
+	//equipment
+	foreach eq in $items[jurassic parka, roman candelabra, unwrapped knock-off retro superhero cape,
+	April Shower Thoughts Shield, Fourth of May cosplay saber]
+	{
+		if(possessEquipment(eq) && auto_can_equip(eq))
+		{
+			count +=1;
+			continue;
+		}
+	}
+	//combat items/IOTMs/IOTM-Derived items that aren't equipment
+	foreach it in $items[Yellowcake Bomb, yellow rocket, spitball, Golden Light, Pumpkin Bomb, Unbearable Light,
+	Viral Video, micronova]
+	{
+		if(auto_is_valid(it) && item_amount(it) > 0)
+		{
+			count +=1;
+			continue;
+		}
+	}
+	//campground equipment
+	foreach it in $items[Portable Mayo Clinic, Asdon Martin keyfob (on ring)]
+	{
+		if(have_workshed() && auto_get_campground() contains it)
+		{
+			count +=1;
+			continue;
+		}
+	}
+	//familiars
+	foreach fam in $familiars[Crimbo Shrub]
+	{
+		if(auto_have_familiar(fam) && canChangeToFamiliar(fam))
+		{
+			count +=1;
+			continue;
+		}
+	}
+	return count;
+}
+
+int copySources()
+{
+	//This should only look at copiers/replacers/summons we have programmed, and not specialised summons like Calculate the Universe
+	//IOTM-derived skills should be checked against the IOTM, not the skill/item if the skill/IOTM is not tradeable 
+	//
+	// Look at auto_combat_util.ash: replaceMonsterCombatString
+	// Replaces
+	// Macrometeorite: Skill
+	// Replace Enemy: Equipment
+	// waffle: Item
+	// Look at auto_combat_default_stage1.ash
+	// and auto_combat_default_stage4.ash
+	// and then at auto_util: handleCopiedMonster for the items
+	// EXCEPT actually only the rain-doh black box is implemented
+	// Copies
+	// Recall Facts Monster Habitats: Skill
+	// Fire a Red, White and Blue Blast: Familiar
+	// Back-Up to your Last Enemy: Equipment
+	// Rain-Doh black box: Item
+	// Digitize: Skill
+	// Blow the Purple Candle!: Equipment
+	// Look at auto_util.ash: summonMonster
+	// Summons (Calculate the Universe, Cargo Shorts and Burly Bodyguard in AG are all overly specialised)
+	// Rain Man: Skill
+	// Time-Spinner: Item
+	// Chest Mimic: Familiar
+	// combat lover's locket: Item (does not need to be equipped to reminisce)
+	// deluxe fax machine: Clan
+	// Wishing: Item
+
+	int count = 0;
+	foreach sk in $skills[Macrometeorite, Recall Facts: Monster Habitats, Digitize, rain man]
+	{
+		if(auto_have_skill(sk))
+		{
+			count +=1;
+			continue;
+		}
+	}
+	//equipment
+	foreach eq in $items[Powerful Glove, backup camera, roman candelabra]
+	{
+		if(possessEquipment(eq) && auto_can_equip(eq))
+		{
+			count +=1;
+			continue;
+		}
+	}
+	//combat items/IOTMs/IOTM-Derived items that aren't equipment
+	foreach it in $items[waffle, Rain-Doh black box, Time-Spinner, combat lover\'s locket]
+	{
+		if(auto_is_valid(it) && item_amount(it) > 0)
+		{
+			count +=1;
+			continue;
+		}
+	}
+	//clan equipment
+	foreach it in $items[deluxe fax machine]
+	{
+		if(auto_get_clan_lounge() contains it)
+		{
+			count +=1;
+			continue;
+		}
+	}
+	//familiars
+	foreach fam in $familiars[patriotic eagle, chest mimic]
+	{
+		if(auto_have_familiar(fam) && canChangeToFamiliar(fam))
+		{
+			count +=1;
+			continue;
+		}
+	}
+	if (auto_wishesAvailable() > 0) {
+		count +=1;
+	}
+	return count;
+}
+
+int sniffSources()
+{
+	//This should only look at sniffs we have programmed
+	//IOTM-derived skills should be checked against the IOTM, not the skill/item if the skill/IOTM is not tradeable 
+	//
+	// Look at auto_combat_util.ash: getSniffer
+	// Transcendent Olfaction: Skill
+	// Make Friends: Skill
+	// Hunt: Skill
+	// Long Con: Skill
+	// Perceive Soul: Skill
+	// Motif: Skill
+	// Monkey Point: Equipment
+	// McHugeLarge Slash: Equipment
+	// Gallapagosian Mating Call: Skill
+	// Get a Good Whiff of This Guy: Familiar
+	// Offer Latte to Opponent: Equipment
+	// Zootomist Kick Sniff: Skill
+	// Meat Cute: Skill
+	int count = 0;
+	foreach sk in $skills[Transcendent Olfaction, Make Friends, Hunt, Long Con, Perceive Soul, Motif,
+	Gallapagosian Mating Call, Meat Cute]
+	{
+		if(auto_have_skill(sk))
+		{
+			count +=1;
+			continue;
+		}
+	}
+	if (canUse(getZooKickSniff())) {
+		count += 1;
+	}
+	//equipment
+	foreach eq in $items[cursed monkey\'s paw, McHugeLarge left pole, latte lovers member's mug]
+	{
+		if(possessEquipment(eq) && auto_can_equip(eq))
+		{
+			count +=1;
+			continue;
+		}
+	}
+	//familiars
+	foreach fam in $familiars[Nosy Nose]
+	{
+		if(auto_have_familiar(fam) && canChangeToFamiliar(fam))
+		{
+			count +=1;
+			continue;
+		}
+	}
+	return count;
 }
 
 boolean hasTorso()
@@ -1437,6 +1976,8 @@ int cloversAvailable(boolean override)
 		}
 		//Get from April band
 		numClovers += auto_AprilSaxLuckyLeft();
+		//heartstone
+		numClovers += auto_heartstoneLuckRemaining();
 	}
 
 	//count Astral Energy Drinks which we have room to chew. Must specify ID since there are now 2 items with this name
@@ -1473,6 +2014,21 @@ boolean cloverUsageInit(boolean override)
 	}
 	
 	set_property("auto_luckySource","none");
+	
+	if (auto_heartstoneLuckRemaining() > 0)
+	{
+		use_skill($skill[Heartstone: %luck]);
+		if (have_effect($effect[Lucky!]) > 0)
+		{
+			auto_log_info("Clover usage initialized, using Heartstone LUCK.");
+			set_property("auto_luckySource",to_string($item[heartstone]));
+			return true;
+		}
+		else
+		{
+			auto_log_warning("Did not acquire Lucky! after using heartstone LUCK.");
+		}
+	}
 	
 	if (auto_AprilSaxLuckyLeft() > 0)
 	{
@@ -2040,6 +2596,14 @@ boolean LX_summonMonster()
 		item_amount(oreGoal) < 2 && canYellowRay() && canSummonMonster($monster[mountain man]))
 	{
 		adjustForYellowRayIfPossible();
+		boolean need_dupe    = item_amount(oreGoal) < 1;
+		boolean can_mctwist  = auto_can_equip($item[pro skateboard]) && !get_property("_epicMcTwistUsed").to_boolean();
+		boolean will_mctwist = can_mctwist && need_dupe;
+		auto_log_info("Trying to summon a mountain man"+(will_mctwist?" which we will McTwist.":"."));
+		if (will_mctwist)
+		{
+			autoEquip($item[pro skateboard]);
+		}
 		if(summonMonster($monster[mountain man])) return true;
 	}
 
@@ -2178,6 +2742,12 @@ boolean summonMonster(monster mon, boolean speculative)
 		return true;
 	}
 	// methods which can only summon monsters should be attempted first
+	if(auto_meggFight(mon, speculative))
+	{
+		auto_log_debug((speculative ? "Can" : "Did") + " summon " + mon + " via chest mimics", "blue");
+		return true;
+	}
+	
 	if(auto_fightLocketMonster(mon, speculative))
 	{
 		auto_log_debug((speculative ? "Can" : "Did") + " summon " + mon + " via combat lover's locket", "blue");
@@ -2650,7 +3220,7 @@ boolean auto_autosell(int quantity, item toSell)
 		return false;
 	}
 
-	if(!in_wotsf())
+	if(!in_wotsf() && !in_amw())
 	{
 		return autosell(quantity, toSell);
 	}
@@ -3365,6 +3935,17 @@ boolean auto_is_valid(skill sk)
 boolean auto_is_valid(effect eff)
 {
 	return glover_usable(eff.to_string());
+}
+
+boolean auto_is_valid(string str)
+{
+	// unknown entries, presumably Bookshelf skills
+	if(my_path() == $path[Trendy])
+	{
+		return is_trendy(str);
+	}
+	
+	return is_unrestricted(str);
 }
 
 void auto_log(string s, string color, int log_level)
@@ -4408,6 +4989,10 @@ boolean auto_MaxMLToCap(int ToML, boolean doAltML)
 	{
 		tryEffects($effects[Litterbug, Sweetbreads Flamb&eacute;]);
 	}
+	if (in_amw())
+	{
+		tryEffects($effects[Hamming It Up]);
+	}
 
 
 // 24 >= U >= 10
@@ -4425,6 +5010,11 @@ boolean auto_MaxMLToCap(int ToML, boolean doAltML)
 	if(doAltML)
 	{
 		tryEffects($effects[Tortious]);
+	}
+
+	if (in_amw())
+	{
+		tryEffects($effects[Acting Jerky]);
 	}
 
 // <10
@@ -4500,7 +5090,7 @@ boolean _auto_forceNextNoncombat(location loc, boolean speculative)
 		set_property("auto_forceNonCombatSource", "Apriling tuba");
 		return true;
 	}
-	else if(auto_haveMcHugeLargeSkis() && get_property("_mcHugeLargeAvalancheUses") < 3 && (!in_wereprof() || !is_professor())) // if we're a professor, we can't use the spikes
+	else if(auto_haveMcHugeLargeSkis() && get_property("_mcHugeLargeAvalancheUses") < 3 && (!in_wereprof() || !is_professor())) // if we're a professor, we can't use the skis
 	{
 		if(speculative) return true;
 		// avalanche require a combat to active
@@ -4518,6 +5108,17 @@ boolean _auto_forceNextNoncombat(location loc, boolean speculative)
 		set_property("auto_forceNonCombatSource", "jurassic parka");
 		// track desired NC location so we know where to go when parka spikes are preped
 		set_property("auto_forceNonCombatLocation", loc);
+		return true;
+	}
+	else if(auto_canARBSupplyDrop())
+	{
+		if(speculative) return true;
+		ARBSupplyDrop("sniper support");
+		if(!auto_haveQueuedForcedNonCombat())
+		{
+			abort("Attempted to force a noncombat with [Allied Radio Backpack] but was unable to.");
+		}
+		set_property("auto_forceNonCombatSource", "Allied Radio Backpack");
 		return true;
 	}
 	else if(item_amount($item[stench jelly]) > 0 && auto_is_valid($item[stench jelly]) && !isActuallyEd()
@@ -4702,6 +5303,7 @@ void effectAblativeArmor(boolean passive_dmg_allowed)
 	buffMaintain($effect[Ghostly Shell]);						//6 MP
 	buffMaintain($effect[Tenacity of the Snapper]);			//8 MP
 	buffMaintain($effect[Empathy]);							//15 MP
+	buffMaintain($effect[Thoughtful Empathy]);				//15 MP
 	buffMaintain($effect[Reptilian Fortitude]);				//8 MP
 	buffMaintain($effect[Astral Shell]);						//10 MP
 	buffMaintain($effect[Jingle Jangle Jingle]);				//5 MP
@@ -4918,15 +5520,23 @@ boolean auto_burnMP(int mpToBurn)
 		set_property("lastChanceBurn","cast # " + defaultSkill);
 	}
 
+	item[int] equipped = auto_saveEquipped();
+
+	addToMaximize("-1000mana cost, -tie");
+	equipMaximizedGear();
+	auto_equipAprilShieldBuff(); //useful additional buffs when equipped
+
 	// record starting MP
 	int startingMP = my_mp();
 	cli_execute("burn " + mpToBurn);
+	auto_loadEquipped(equipped);
+	removeFromMaximize("-1000mana cost");
 	return startingMP != my_mp();
 }
 
 boolean can_read_skillbook(item it) {
-	// can't read in Picky
-	if (in_picky()) {
+	// can't read in Picky, Pokefam, Class Act or Journeyman
+	if (in_picky() || in_pokefam() || my_path() == $path[Class Act] || my_path() == $path[Class Act II: A Class For Pigs] || my_path() == $path[Journeyman]) {
 		return false;
 	}
 	// all the normal classes and AoSOL classes are literate
@@ -4939,29 +5549,22 @@ boolean can_read_skillbook(item it) {
 	return false;
 }
 
-boolean have_campground() {
-	if (isActuallyEd() || in_robot() || in_nuclear() || in_small() || in_wereprof()) {
-		return false;
-	}
-	return true;
-}
-
 boolean have_workshed() {
-	if (isActuallyEd() || in_robot() || in_nuclear() || in_wereprof()) {
-		return false;
+	if (in_small()) {
+		return true;
 	}
-	return true;
+	return have_campground();
 }
 
 int baseNCForcesToday()
 {
 	int forces = 0;
 	if (auto_havePillKeeper()) {forces = forces + 6;}
-	if (auto_haveAprilingBandHelmet() && available_amount($item[apriling band saxophone])>0) {forces = forces + 3;}
+	if (auto_haveAprilingBandHelmet() && available_amount($item[apriling band tuba])>0) {forces = forces + 3;}
 	if (auto_haveMcHugeLargeSkis()) {forces = forces + 3;}
 	if (auto_hasParka()) {forces = forces + 5;}
 	if (auto_haveCincho()) {forces = forces + 3;} // Not important to calculate this properly here.
-	
+	if (auto_haveARB()) {forces = forces + 3;}
 	return forces;
 }
 
@@ -4973,6 +5576,7 @@ int remainingNCForcesToday()
 	forces = forces + auto_McLargeHugeForcesLeft();
 	forces = forces + auto_ParkaSpikeForcesLeft();
 	forces = forces + auto_cinchForcesLeft();
+	forces = forces + auto_ARBSupplyDropsLeft();
 	
 	return forces;
 }
@@ -4985,6 +5589,7 @@ int turnsUsedByRemainingNCForcesToday()
 	forces = forces + 2 * auto_McLargeHugeForcesLeft();
 	forces = forces + 2 * auto_ParkaSpikeForcesLeft();
 	forces = forces + auto_cinchForcesLeft();
+	forces = forces + auto_ARBSupplyDropsLeft();
 	
 	return forces;
 }
@@ -5213,7 +5818,7 @@ boolean auto_wantToFreeKillWithNoDrops(location loc, monster enemy)
 	}
 
 	// look for specific monsters in zones where some monsters we do care about
-	static boolean[string] targets = $strings[
+	static boolean[monster] targets = $monsters[
 		// The Haunted Bathroom
 		claw-foot bathtub,
 		malevolent hair clog,
@@ -5222,7 +5827,7 @@ boolean auto_wantToFreeKillWithNoDrops(location loc, monster enemy)
 		// The Haunted Gallery
 		cubist bull,
 		empty suit of armor,
-		guy with a pitchfork, and his wife,
+		guy with a pitchfork\, and his wife,
 
 		// The Haunted Bedroom
 		animated mahogany nightstand,
@@ -5330,4 +5935,16 @@ float auto_getElementalDamageMultiplier(element source, element target)
 	if (source == $element[spooky] && $elements[cold  , sleaze] contains target) { return 2.0; }
 	if (source == $element[stench] && $elements[hot   , spooky] contains target) { return 2.0; }
 	return 1.0;
+}
+
+
+int auto_remainingShantyTurns()
+{
+	int turns = 0;
+	foreach ef in $effects[Who's Going to Pay This Drunken Sailor?, Only Dogs Love a Drunken Sailor,
+	  I'm Smarter Than a Drunken Sailor, Look At That Drunken Sailor Dance, Let's Beat Up This Drunken Sailor]
+	{
+		turns = max(turns,have_effect(ef));
+	}
+	return turns;
 }

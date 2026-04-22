@@ -85,7 +85,6 @@ boolean elementalPlanes_takeJob(element ele);
 boolean eudora_available();
 boolean[item] eudora_initializeSettings();
 item eudora_current();
-int[item] eudora_xiblaxian();
 
 ########################################################################################################
 //Defined in autoscend/iotms/mr2007.ash
@@ -152,6 +151,8 @@ void doghouseChoiceHandler(int choice);
 
 ########################################################################################################
 //Defined in autoscend/iotms/mr2016.ash
+boolean auto_haveJokestersGun();
+boolean auto_jokesterGunFreeKillAvailable();
 boolean snojoFightAvailable();
 boolean auto_haveSourceTerminal();
 boolean isOverdueDigitize();
@@ -212,6 +213,7 @@ boolean kgb_getMartini(string page, boolean dontCare);
 boolean kgbDial(int dial, int curVal, int target);
 boolean solveKGBMastermind();
 boolean getSpaceJelly();
+int auto_breatheOutsLeft();
 boolean haveAsdonBuff();
 boolean asdonBuff(string goal);
 boolean canAsdonBuff(effect goal);
@@ -324,6 +326,9 @@ boolean auto_haveKramcoSausageOMatic();
 boolean auto_sausageGoblin();
 boolean auto_sausageGoblin(location loc);
 boolean auto_sausageGoblin(location loc, string option);
+boolean auto_haveLilDoctorBag();
+int auto_chestXraysRemaining();
+int auto_reflexHammersRemaining();
 boolean pirateRealmAvailable();
 boolean LX_unlockPirateRealm();
 boolean auto_saberChoice(string choice);
@@ -576,7 +581,6 @@ boolean auto_haveCCSC();
 boolean auto_handleCCSC();
 int auto_remainingCandyCaneSlashes();
 int auto_remainingCandyCaneStabs();
-void auto_useWardrobe();
 
 ########################################################################################################
 //Defined in autoscend/iotms/mr2024.ash
@@ -635,6 +639,9 @@ boolean auto_getClanPhotoBoothEffect(effect ef);
 boolean auto_getClanPhotoBoothEffect(effect ef, int n_times);
 boolean auto_getClanPhotoBoothEffect(string ef);
 boolean auto_getClanPhotoBoothEffect(string ef, int n_times);
+boolean auto_haveChestMimic();
+boolean auto_haveMeggEgg(monster mon);
+boolean auto_meggFight(monster mon, boolean speculative);
 
 ########################################################################################################
 //Defined in autoscend/iotms/mr2025.ash
@@ -652,9 +659,63 @@ boolean auto_setLeprecondo();
 boolean auto_useLeprecondoDrops();
 int auto_punchOutsLeft();
 int auto_afterimagesLeft();
+boolean auto_haveAprilShowerShield();
+boolean auto_getGlobs();
+boolean auto_equipAprilShieldBuff();
+boolean auto_unequipAprilShieldBuff();
+boolean auto_canNorthernExplosionFE();
 boolean auto_havePeridot();
+boolean[monster] peridotManuallyDesiredMonsters();
 void peridotChoiceHandler(int choice, string page);
-boolean inperilLocations(int loc);
+boolean haveUsedPeridot(int loc);
+boolean auto_havePrismaticBeret();
+boolean canBusk();
+int[string] beretPower(item[int] allHats, item[int] allShirts, item[int] allPants);
+string bestBusk(int[string] powers, string effectMultiplier);
+boolean beretBusk(string effectMultiplier);
+boolean beretBusk();
+boolean auto_haveCoolerYeti();
+boolean auto_haveMobiusRing();
+int auto_paradoxicity();
+boolean auto_timeIsAStripPossible();
+void mobiusChoiceHandler(int choice, string page);
+int auto_timeCopFights();
+boolean auto_haveMonodent();
+boolean auto_waveTheZone();
+boolean auto_talkToSomeFish(location loc, monster enemy);
+int auto_throwLightningRemaining();
+boolean auto_haveShrunkenHead();
+boolean auto_wantToShrunkenHead(monster enemy);
+boolean auto_wantToShrunkenHead(location place);
+boolean auto_haveCrimboSkeleton();
+void auto_wantSoCP();
+
+########################################################################################################
+//Defined in autoscend/iotms/mr2026.ash
+boolean auto_haveLegendarySealClubbingClub();
+int auto_clubEmBackInTimesRemaining();
+int auto_clubEmAcrossTheBattlefieldsRemaining();
+int auto_clubEmIntoNextWeeksRemaining();
+boolean wantToClubEmBackInTime(location loc, monster enemy);
+boolean auto_haveEternityCodpiece();
+boolean auto_isInEternityCodpiece(item it);
+boolean auto_haveHeartstone();
+int auto_heartstoneBanishRemaining();
+int auto_heartstoneBuffsRemaining();
+int auto_heartstoneKillRemaining();
+int auto_heartstoneLuckRemaining();
+int auto_heartstonePalsRemaining();
+int auto_heartstoneStunRemaining();
+
+
+########################################################################################################
+//Defined in autoscend/iotms/ttt.ash
+int[item] eudora_xiblaxian();
+void auto_useWardrobe();
+boolean auto_haveARB();
+boolean auto_canARBSupplyDrop();
+int auto_ARBSupplyDropsLeft();
+boolean ARBSupplyDrop(string req);
 
 ########################################################################################################
 //Defined in autoscend/paths/actually_ed_the_undying.ash
@@ -687,6 +748,22 @@ boolean edAcquireHP();
 boolean edAcquireHP(int goal);
 boolean LM_edTheUndying();
 void edUnderworldChoiceHandler(int choice);
+
+########################################################################################################
+//Defined in autoscend/paths/adventurer_meats_world.ash
+boolean in_amw();
+void amw_initializeSettings();
+boolean amw_canAfford(skill sk);
+boolean amw_buySubstat(stat st, int numberToBuy);
+int amw_advPerTrade();
+int amw_advBundleCost(int adv_bundles, boolean cumulative);
+int amw_advBundleCost(int adv_bundles);
+boolean amw_buyAdv();
+int amw_calculateReserve();
+boolean amw_buyStats();
+boolean LM_adventurerMeatsWorld();
+boolean amw_wantMeat();
+boolean LX_attemptPowerLevelMeat();
 
 ########################################################################################################
 //Defined in autoscend/paths/avant_guard.ash
@@ -992,6 +1069,7 @@ void picky_startAscension();
 boolean in_pokefam();
 void pokefam_initializeSettings();
 string pokefam_defaultMaximizeStatement();
+void pokefam_getHats();
 boolean pokefam_makeTeam();
 boolean L12_pokefam_clearBattlefield();
 
@@ -1510,6 +1588,7 @@ boolean autoCleanse();
 boolean autoDrink(int howMany, item toDrink);
 boolean autoDrink(int howMany, item toDrink, boolean silent);
 boolean autoOverdrink(int howMany, item toOverdrink);
+float minAdvPerDrunk(item toDrink);
 string cafeFoodName(int id);
 string cafeDrinkName(int id);
 boolean autoDrinkCafe(int howmany, int id);
@@ -1562,7 +1641,9 @@ boolean auto_craftIfFree(item it);
 string getMaximizeSlotPref(slot s);
 boolean autoEquip(slot s, item it);
 boolean autoEquip(item it);
+boolean autoForceEquip(slot s, item it, boolean noMaximize);
 boolean autoForceEquip(slot s, item it);
+boolean autoForceEquip(item it, boolean noMaximize);
 boolean autoForceEquip(item it);
 boolean autoOutfit(string toWear);
 boolean autoStripOutfit(string toRemove);
@@ -1597,6 +1678,10 @@ boolean auto_forceEquipSword();
 boolean is_watch(item it);
 int[item] auto_getAllEquipabble();
 int[item] auto_getAllEquipabble(slot s);
+item[int] auto_saveEquipped();
+boolean auto_loadEquipped(item[int] loadEquip);
+int[slot] powerMultipliers();
+void auto_equipFreekill();
 
 ########################################################################################################
 //Defined in autoscend/auto_familiar.ash
@@ -1619,6 +1704,12 @@ boolean haveSpleenFamiliar();
 boolean wantCubeling();
 void preAdvUpdateFamiliar(location place);
 boolean auto_needsGoodFamiliarEquipment();
+int auto_famWeight(familiar fam, boolean include_equip);
+int auto_famWeight(familiar fam);
+int auto_famWeight();
+float auto_famModifiers(familiar fam, string mod, item famEquip);
+float auto_famModifiers(familiar fam, string mod);
+float auto_famModifiers(string mod);
 
 ########################################################################################################
 //Defined in autoscend/auto_list.ash
@@ -1804,6 +1895,7 @@ boolean acquireHP(int goal, int meat_reserve, boolean freeRest);
 boolean acquireHP(float goalPercent);
 boolean acquireHP(float goalPercent, int meat_reserve);
 boolean acquireHP(float goalPercent, int meat_reserve, boolean freeRest);
+boolean acquireFullHP();
 float mp_regen();
 float hp_regen();
 int doRest();
@@ -1871,6 +1963,7 @@ item[int] drops_available();
 item[int] hugpocket_available();
 boolean is_ghost_in_zone(location loc);
 boolean[location] monster_to_location(monster target);
+boolean[location] auto_swoopLocations();
 
 ########################################################################################################
 //Defined in autoscend/auto_util.ash
@@ -1911,6 +2004,7 @@ boolean canYellowRay(monster target);
 boolean canYellowRay();
 float[monster] auto_combat_appearance_rates(location place, boolean queue);
 float[monster] auto_combat_appearance_rates(location place);
+float auto_zonePhylumPercent(location loc, phylum phyl);
 boolean[string] auto_banishesUsedAt(location loc);
 boolean auto_wantToBanish(monster enemy, location loc);
 boolean auto_wantToBanish(phylum enemyphylum, location loc);
@@ -1939,6 +2033,13 @@ boolean adjustForSniffingIfPossible();
 boolean canCopy(monster enemy, location loc);
 boolean adjustForCopyIfPossible(monster target);
 boolean adjustForCopyIfPossible();
+int banishSources();
+int freeRunSources();
+int freeKillSources();
+int instaKillSources();
+int yellowRaySources();
+int copySources();
+int sniffSources();
 boolean hasTorso();
 boolean isGuildClass();
 float elemental_resist_value(int resistance);
@@ -2025,6 +2126,7 @@ boolean auto_is_valid(item it);
 boolean auto_is_valid(familiar fam);
 boolean auto_is_valid(skill sk);
 boolean auto_is_valid(effect eff);
+boolean auto_is_valid(string str);
 void auto_log(string s, string color, int log_level);
 void auto_log_error(string s);
 void auto_log_warning(string s, string color);
@@ -2079,7 +2181,6 @@ int auto_totalEffectWishesAvailable();
 item wrap_item(item it);
 boolean auto_burnMP(int mpToBurn);
 boolean can_read_skillbook(item it);
-boolean have_campground();
 boolean have_workshed();
 int baseNCForcesToday();
 int remainingNCForcesToday();
@@ -2102,3 +2203,4 @@ modifier resistanceModifier (element el);
 modifier damageModifier     (element el);
 modifier spellDamageModifier(element el);
 float auto_getElementalDamageMultiplier(element source, element target);
+int auto_remainingShantyTurns();

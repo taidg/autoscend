@@ -1,4 +1,5 @@
-since r28545;	//  correct names for cola battlefield zones
+since r28969; // add council text for Adventurer Meats World
+
 /***
 	autoscend_header.ash must be first import
 	All non-accessory scripts must be imported here
@@ -50,8 +51,11 @@ import <autoscend/iotms/mr2022.ash>
 import <autoscend/iotms/mr2023.ash>
 import <autoscend/iotms/mr2024.ash>
 import <autoscend/iotms/mr2025.ash>
+import <autoscend/iotms/mr2026.ash>
+import <autoscend/iotms/ttt.ash>
 
 import <autoscend/paths/actually_ed_the_undying.ash>
+import <autoscend/paths/adventurer_meats_world.ash>
 import <autoscend/paths/auto_path_util.ash>
 import <autoscend/paths/avant_guard.ash>
 import <autoscend/paths/avatar_of_boris.ash>
@@ -194,6 +198,7 @@ void initializeSettings() {
 	set_property("auto_disableAdventureHandling", false);
 	set_property("auto_doCombatCopy", "no");
 	set_property("auto_dontPhylumBanish", false);
+	set_property("auto_runDayCount", 2);
 	set_property("auto_drunken", "");
 	set_property("auto_eaten", "");
 	set_property("auto_familiarChoice", "");
@@ -228,6 +233,7 @@ void initializeSettings() {
 	set_property("auto_leaflet_done", false);
 	set_property("auto_lucky", "");
 	set_property("auto_luckySource", "none");
+	set_property("auto_mapperidot", "");
 	set_property("auto_modernzmobiecount", "");
 	set_property("auto_powerfulglove", "");
 	set_property("auto_otherstuff", "");
@@ -299,6 +305,7 @@ void initializeSettings() {
 	small_initializeSettings();
 	wereprof_initializeSettings();
 	ag_initializeSettings();
+	amw_initializeSettings();
 
 	set_property("auto_doneInitializePath", my_path().name);		//which path we initialized as
 	set_property("auto_doneInitialize", my_ascensions());
@@ -693,6 +700,12 @@ void initializeDay(int day)
 
 	invalidateRestoreOptionCache();
 
+	if(get_property("auto_pvpEnable").to_boolean() && !hippy_stone_broken())
+	{
+		visit_url("peevpee.php?action=smashstone&pwd&confirm=on", true);
+		visit_url("peevpee.php?place=fight");
+	}
+
 	if (get_property("auto_day_init").to_int() < day)
 	{
 		set_property("auto_powerLevelLastLevel", "0");
@@ -814,7 +827,7 @@ void initializeDay(int day)
 		visit_url("inv_use.php?pwd=&which=3&whichitem=6174", true);
 		visit_url("inv_use.php?pwd=&which=3&whichitem=6174&confirm=Yep.", true);
 		set_property("auto_disableAdventureHandling", true);
-		autoAdv(1, $location[Video Game Level 1]);
+		autoAdv(1, $location[[DungeonFAQ - Level 1]]);
 		set_property("auto_disableAdventureHandling", false);
 		if(item_amount($item[Dungeoneering Kit]) > 0)
 		{
@@ -958,12 +971,6 @@ void initializeDay(int day)
 
 			string temp = visit_url("guild.php?place=challenge");
 
-			if(get_property("auto_pvpEnable").to_boolean() && !hippy_stone_broken())
-			{
-				visit_url("peevpee.php?action=smashstone&pwd&confirm=on", true);
-				visit_url("peevpee.php?place=fight");
-			}
-
 			auto_beachCombHead("exp");
 		}
 
@@ -982,6 +989,13 @@ void initializeDay(int day)
 				foreach fam in $familiars[ghost of crimbo carols, ghost of crimbo commerce, ghost of crimbo cheer]
 				{
 					if (have_familiar(fam) && !in_bhy())
+					{
+						use_familiar(fam);
+					}
+				}
+				foreach fam in $familiars[chest mimic, cooler yeti]
+				{
+					if (have_familiar(fam))
 					{
 						use_familiar(fam);
 					}
@@ -1233,6 +1247,8 @@ boolean dailyEvents()
 	auto_getAprilingBandItems();
 	auto_MayamClaimAll();
 	auto_buyFromSeptEmberStore();
+	auto_getGlobs();
+	auto_setLeprecondo();
 	
 	return true;
 }
@@ -1397,7 +1413,7 @@ boolean adventureFailureHandler()
 
 		if(tooManyAdventures && isActuallyEd())
 		{
-			if ($location[Hippy Camp] == place)
+			if ($location[The Hippy Camp] == place)
 			{
 				tooManyAdventures = false;
 			}
@@ -1560,7 +1576,7 @@ boolean autosellCrap()
 	{
 		return false;		//do not autosell stuff in casual or postronin unless you are very poor
 	}
-	if(in_wotsf()) 
+	if(in_wotsf())
 	{
 		return false;		//selling things in the way of the surprising fist only donates the money to charity, so we should not autosell anything automatically
 	}
@@ -1578,6 +1594,23 @@ boolean autosellCrap()
 		{
 			use(min(10,item_amount(it)-1), it);
 		}
+	}
+	if (!get_property("_governmentPerDiemUsed").to_boolean() && item_amount($item[government per-diem]) > 0) {
+		use(1, $item[government per-diem]);
+	}
+	if (item_amount($item[stock certificate]) > 0) {
+	string turns = get_property("stockCertificateTurns");
+	if (turns != "") {
+		int earliestTurns = split_string(turns, ",")[0].to_int();
+		if (total_turns_played() - earliestTurns >= 500) {
+			use(1, $item[Stock Certificate]);
+		}
+	}
+}
+
+	if(in_amw())
+	{
+		return false; // don't bother trying to autosell in Adventurer Meats World
 	}
 	
 	// Function to sell all of our items, optionally keeping some.
@@ -1921,6 +1954,7 @@ boolean doTasks()
 	boris_buySkills();
 	pete_buySkills();
 	zombieSlayer_buySkills();
+	pokefam_getHats();
 	auto_refreshQTFam();
 	lol_buyReplicas();
 	iluh_buyEquiq();
@@ -1951,12 +1985,12 @@ boolean doTasks()
 	auto_useWardrobe();
 	auto_MayamClaimAll();
 	auto_defaultBurnLeaves();
+	auto_waveTheZone();
 	
 	ocrs_postCombatResolve();
 	beatenUpResolution();
 	lar_safeguard();
 	
-	auto_setLeprecondo();
 	auto_useLeprecondoDrops();
 
 	if (LX_zootoFight()) { return true; }
@@ -1977,6 +2011,7 @@ boolean doTasks()
 	if(LM_robot())						return true;
 	if(LM_plumber())					return true;
 	if(LM_zombieSlayer())				return true;
+	if(LM_adventurerMeatsWorld())		return true;
 
 	{
 		cheeseWarMachine(0, 0, 0, 0);
@@ -2087,6 +2122,9 @@ void auto_begin()
 	auto_log_info("This is day " + my_daycount() + ".");
 	auto_log_info("Turns played: " + my_turncount() + " current adventures: " + my_adventures());
 	auto_log_info("Current Ascension: " + my_path().name);
+	auto_log_info("You have: " + banishSources() + " banish sources, " + freeRunSources() + " free-run sources, " +
+	freeKillSources() + " free kill sources, " + instaKillSources() + " insta-kill sources, " + yellowRaySources() +
+	" yellow ray sources, " + copySources() + " copy sources, and " + sniffSources() + " sniff sources.");
 
 	auto_settings();
 
